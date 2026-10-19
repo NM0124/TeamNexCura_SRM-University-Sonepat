@@ -6,11 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
-# Distribution / packaging
+# Distribution / packaging / build artifacts
 .Python
 build/
 develop-eggs/
 dist/
+dist-ssr/
 downloads/
 eggs/
 .eggs/
@@ -23,6 +24,18 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# Node / Frontend dependencies & logs
+node_modules/
+frontend/node_modules/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.local
 
 # Virtual environments
 venv/
@@ -39,17 +52,17 @@ ENV/
 *.db
 data/processed/*.sqlite
 
-# Generated data (optional to keep or gitignore)
-# data/generated/
-
 # Testing & coverage
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Streamlit local state
-.streamlit/
-
-# IDE files
+# IDE & Editor files
 .vscode/
 .idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
