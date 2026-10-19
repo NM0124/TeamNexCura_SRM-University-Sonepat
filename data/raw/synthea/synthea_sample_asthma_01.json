@@ -1,0 +1,116 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-patient-synth-001",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "SYNTH-PAT-001",
+        "gender": "female",
+        "birthDate": "1988-04-12"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-01",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "195967001",
+              "display": "Asthma (disorder)"
+            }
+          ],
+          "text": "Asthma"
+        },
+        "onsetDateTime": "2015-06-10T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-02",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "61582004",
+              "display": "Allergic rhinitis"
+            }
+          ],
+          "text": "Allergic rhinitis"
+        },
+        "onsetDateTime": "2016-03-15T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "enc-01",
+        "class": {
+          "code": "emergency",
+          "display": "Emergency encounter"
+        },
+        "period": {
+          "start": "2025-05-10T14:30:00Z",
+          "end": "2025-05-10T18:00:00Z"
+        },
+        "reasonCode": [
+          {
+            "text": "Acute bronchospasm and wheeze"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-01",
+        "status": "active",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "code": "745679",
+              "display": "Albuterol 90mcg Inhalation Aerosol"
+            }
+          ],
+          "text": "Albuterol Inhaler"
+        },
+        "authoredOn": "2025-05-10T17:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "id": "all-01",
+        "criticality": "high",
+        "code": {
+          "coding": [
+            {
+              "code": "444814009",
+              "display": "Allergy to tree pollen"
+            }
+          ],
+          "text": "Tree pollen allergy"
+        },
+        "recordedDate": "2016-03-15T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-pb-01",
+        "code": {
+          "text": "Personal best peak expiratory flow rate"
+        },
+        "valueQuantity": {
+          "value": 450.0,
+          "unit": "L/min"
+        },
+        "effectiveDateTime": "2025-01-12T10:00:00Z"
+      }
+    }
+  ]
+}

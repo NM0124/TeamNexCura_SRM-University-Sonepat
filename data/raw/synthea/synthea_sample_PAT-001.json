@@ -1,0 +1,273 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-PAT-001",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "PAT-001",
+        "gender": "female",
+        "birthDate": "1998-03-12",
+        "name": [{"text": "Ananya Sharma", "family": "Sharma", "given": ["Ananya"]}],
+        "address": [{"city": "Bengaluru", "state": "Karnataka", "country": "India"}]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-pat001-01",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "195967001",
+              "display": "Extrinsic Asthma (J45.9)"
+            }
+          ],
+          "text": "Asthma (J45.9)"
+        },
+        "onsetDateTime": "2015-04-10T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-pat001-02",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "61582004",
+              "display": "Allergic rhinitis"
+            }
+          ],
+          "text": "Allergic rhinitis"
+        },
+        "onsetDateTime": "2016-02-15T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "enc-pat001-01",
+        "class": {
+          "code": "ambulatory",
+          "display": "Outpatient Follow-up"
+        },
+        "period": {
+          "start": "2026-03-12T10:00:00Z",
+          "end": "2026-03-12T11:00:00Z"
+        },
+        "reasonCode": [
+          {
+            "text": "Annual Pulmonology Review and Spirometry Assessment"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "enc-pat001-02",
+        "class": {
+          "code": "emergency",
+          "display": "Emergency Room Visit"
+        },
+        "period": {
+          "start": "2025-11-04T22:30:00Z",
+          "end": "2025-11-05T03:00:00Z"
+        },
+        "reasonCode": [
+          {
+            "text": "Acute severe bronchospasm following post-monsoon dust exposure"
+          }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-pat001-01",
+        "status": "active",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "code": "310291",
+              "display": "Fluticasone propionate / Salmeterol 250/50 mcg"
+            }
+          ],
+          "text": "Fluticasone / Salmeterol Inhaler"
+        },
+        "authoredOn": "2026-03-12T10:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-pat001-02",
+        "status": "active",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "code": "745679",
+              "display": "Albuterol sulfate 90 mcg/actuation HFA Inhaler"
+            }
+          ],
+          "text": "Albuterol Rescue Inhaler"
+        },
+        "authoredOn": "2026-03-12T10:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "id": "all-pat001-01",
+        "criticality": "high",
+        "code": {
+          "coding": [
+            {
+              "code": "444814009",
+              "display": "Allergy to particulate matter & tree pollen"
+            }
+          ],
+          "text": "Tree Pollen & PM2.5 Sensitivity"
+        },
+        "recordedDate": "2016-02-15T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "id": "all-pat001-02",
+        "criticality": "high",
+        "code": {
+          "coding": [
+            {
+              "code": "390952000",
+              "display": "House dust mite allergen"
+            }
+          ],
+          "text": "House Dust Mite"
+        },
+        "recordedDate": "2017-08-20T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-pat001-pb",
+        "code": {
+          "text": "Personal best peak expiratory flow rate"
+        },
+        "valueQuantity": {
+          "value": 450.0,
+          "unit": "L/min"
+        },
+        "effectiveDateTime": "2026-01-15T09:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat001-01",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {
+          "coding": [{"code": "26449-3", "display": "Eosinophil Count"}],
+          "text": "Eosinophil Count"
+        },
+        "valueQuantity": {
+          "value": 420.0,
+          "unit": "cells/µL"
+        },
+        "referenceRange": [{"high": {"value": 300.0}}],
+        "interpretation": [{"coding": [{"code": "H"}]}],
+        "effectiveDateTime": "2026-03-12T10:15:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat001-02",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {
+          "coding": [{"code": "19113-0", "display": "IgE (Total)"}],
+          "text": "IgE (Total)"
+        },
+        "valueQuantity": {
+          "value": 250.0,
+          "unit": "IU/mL"
+        },
+        "referenceRange": [{"high": {"value": 100.0}}],
+        "interpretation": [{"coding": [{"code": "H"}]}],
+        "effectiveDateTime": "2026-03-12T10:15:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat001-03",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {
+          "coding": [{"code": "1988-5", "display": "CRP"}],
+          "text": "CRP"
+        },
+        "valueQuantity": {
+          "value": 3.2,
+          "unit": "mg/L"
+        },
+        "referenceRange": [{"high": {"value": 5.0}}],
+        "interpretation": [{"coding": [{"code": "N"}]}],
+        "effectiveDateTime": "2026-03-12T10:15:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat001-04",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {
+          "coding": [{"code": "62292-8", "display": "Vitamin D"}],
+          "text": "Vitamin D"
+        },
+        "valueQuantity": {
+          "value": 18.0,
+          "unit": "ng/mL"
+        },
+        "referenceRange": [{"low": {"value": 30.0}, "high": {"value": 100.0}}],
+        "interpretation": [{"coding": [{"code": "L"}]}],
+        "effectiveDateTime": "2026-03-12T10:15:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat001-05",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {
+          "coding": [{"code": "2458-8", "display": "Serum IgA"}],
+          "text": "Serum IgA"
+        },
+        "valueQuantity": {
+          "value": 210.0,
+          "unit": "mg/dL"
+        },
+        "referenceRange": [{"low": {"value": 70.0}, "high": {"value": 400.0}}],
+        "interpretation": [{"coding": [{"code": "N"}]}],
+        "effectiveDateTime": "2026-03-12T10:15:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "ImagingStudy",
+        "id": "img-pat001-ct",
+        "modality": [{"code": "CT", "display": "Computed Tomography"}],
+        "started": "2026-03-12T11:30:00Z",
+        "numberOfInstances": 3,
+        "description": "High-Resolution Computed Tomography (HRCT) Chest",
+        "bodySite": {"display": "Chest / Thorax"},
+        "reasonCode": [{"text": "Mild air trapping with bronchial wall thickening. No consolidation. (Synthetic example)"}]
+      }
+    }
+  ]
+}

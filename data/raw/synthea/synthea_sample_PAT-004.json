@@ -1,0 +1,58 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-PAT-004",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "PAT-004",
+        "gender": "female",
+        "birthDate": "1984-11-03",
+        "name": [{"text": "Sunita Mukherjee", "family": "Mukherjee", "given": ["Sunita"]}],
+        "address": [{"city": "Kolkata", "state": "West Bengal", "country": "India"}]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-pat004-01",
+        "code": {
+          "coding": [{"system": "http://snomed.info/sct", "code": "413839001", "display": "Chronic asthma"}],
+          "text": "Severe Persistent Asthma"
+        },
+        "onsetDateTime": "2010-01-15T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-pat004-01",
+        "status": "active",
+        "medicationCodeableConcept": {"text": "Tiotropium Respimat + Budesonide/Formoterol"},
+        "authoredOn": "2025-08-10T14:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-pat004-pb",
+        "code": {"text": "Personal best peak expiratory flow rate"},
+        "valueQuantity": {"value": 390.0, "unit": "L/min"},
+        "effectiveDateTime": "2025-08-10T14:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat004-01",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {"text": "Eosinophil Count"},
+        "valueQuantity": {"value": 510.0, "unit": "cells/µL"},
+        "referenceRange": [{"high": {"value": 300.0}}],
+        "interpretation": [{"coding": [{"code": "H"}]}],
+        "effectiveDateTime": "2025-08-10T14:30:00Z"
+      }
+    }
+  ]
+}

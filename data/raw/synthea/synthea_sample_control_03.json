@@ -1,0 +1,32 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-patient-synth-003",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "SYNTH-PAT-003",
+        "gender": "female",
+        "birthDate": "1962-02-18"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-301",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "38341003",
+              "display": "Essential hypertension"
+            }
+          ],
+          "text": "Hypertension"
+        },
+        "onsetDateTime": "2018-04-20T00:00:00Z"
+      }
+    }
+  ]
+}

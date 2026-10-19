@@ -1,0 +1,91 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-PAT-002",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "PAT-002",
+        "gender": "male",
+        "birthDate": "1992-07-19",
+        "name": [{"text": "Rajesh Varma", "family": "Varma", "given": ["Rajesh"]}],
+        "address": [{"city": "Delhi NCR", "state": "Delhi", "country": "India"}]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-pat002-01",
+        "code": {
+          "coding": [{"system": "http://snomed.info/sct", "code": "195967001", "display": "Asthma (disorder)"}],
+          "text": "Moderate Persistent Asthma"
+        },
+        "onsetDateTime": "2018-09-01T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-pat002-01",
+        "status": "active",
+        "medicationCodeableConcept": {"text": "Budesonide / Formoterol 200/6 mcg Inhaler"},
+        "authoredOn": "2025-10-15T09:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "id": "all-pat002-01",
+        "criticality": "high",
+        "code": {"text": "Winter Smog & PM2.5"},
+        "recordedDate": "2018-10-01T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-pat002-pb",
+        "code": {"text": "Personal best peak expiratory flow rate"},
+        "valueQuantity": {"value": 480.0, "unit": "L/min"},
+        "effectiveDateTime": "2025-11-01T08:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat002-01",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {"text": "Eosinophil Count"},
+        "valueQuantity": {"value": 310.0, "unit": "cells/µL"},
+        "referenceRange": [{"high": {"value": 300.0}}],
+        "interpretation": [{"coding": [{"code": "H"}]}],
+        "effectiveDateTime": "2025-11-01T08:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat002-02",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {"text": "IgE (Total)"},
+        "valueQuantity": {"value": 180.0, "unit": "IU/mL"},
+        "referenceRange": [{"high": {"value": 100.0}}],
+        "interpretation": [{"coding": [{"code": "H"}]}],
+        "effectiveDateTime": "2025-11-01T08:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat002-03",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {"text": "CRP"},
+        "valueQuantity": {"value": 4.1, "unit": "mg/L"},
+        "referenceRange": [{"high": {"value": 5.0}}],
+        "interpretation": [{"coding": [{"code": "N"}]}],
+        "effectiveDateTime": "2025-11-01T08:30:00Z"
+      }
+    }
+  ]
+}

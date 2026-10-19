@@ -1,0 +1,58 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-PAT-005",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "PAT-005",
+        "gender": "female",
+        "birthDate": "1995-02-28",
+        "name": [{"text": "Pooja Reddy", "family": "Reddy", "given": ["Pooja"]}],
+        "address": [{"city": "Hyderabad", "state": "Telangana", "country": "India"}]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-pat005-01",
+        "code": {
+          "coding": [{"system": "http://snomed.info/sct", "code": "195967001", "display": "Asthma (disorder)"}],
+          "text": "Mild Persistent Asthma"
+        },
+        "onsetDateTime": "2017-04-18T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-pat005-01",
+        "status": "active",
+        "medicationCodeableConcept": {"text": "Montelukast 10mg + Levocetirizine 5mg"},
+        "authoredOn": "2025-09-05T16:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-pat005-pb",
+        "code": {"text": "Personal best peak expiratory flow rate"},
+        "valueQuantity": {"value": 460.0, "unit": "L/min"},
+        "effectiveDateTime": "2025-09-05T16:30:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "lab-pat005-01",
+        "category": [{"coding": [{"code": "laboratory"}]}],
+        "code": {"text": "Eosinophil Count"},
+        "valueQuantity": {"value": 290.0, "unit": "cells/µL"},
+        "referenceRange": [{"high": {"value": 300.0}}],
+        "interpretation": [{"coding": [{"code": "N"}]}],
+        "effectiveDateTime": "2025-09-05T16:30:00Z"
+      }
+    }
+  ]
+}

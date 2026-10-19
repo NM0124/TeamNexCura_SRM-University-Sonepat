@@ -1,0 +1,40 @@
+{
+  "generator_version": "1.0.0",
+  "generation_timestamp": "2026-10-18T09:10:40.062294",
+  "random_seed": 42,
+  "patient_count": 3,
+  "duration_days": 7,
+  "interval_hours": 1,
+  "total_observations": 504,
+  "missing_data_rate": 0.02,
+  "patient_profiles": {
+    "SYNTH_PAT_001": {
+      "patient_id": "SYNTH_PAT_001",
+      "baseline_pef": 442.4,
+      "baseline_hr": 71.2,
+      "baseline_rr": 16.3,
+      "baseline_spo2": 99.0,
+      "pm25_sensitivity": 0.73,
+      "pollen_sensitivity": 0.64
+    },
+    "SYNTH_PAT_002": {
+      "patient_id": "SYNTH_PAT_002",
+      "baseline_pef": 369.6,
+      "baseline_hr": 71.3,
+      "baseline_rr": 13.0,
+      "baseline_spo2": 98.0,
+      "pm25_sensitivity": 0.76,
+      "pollen_sensitivity": 2.39
+    },
+    "SYNTH_PAT_003": {
+      "patient_id": "SYNTH_PAT_003",
+      "baseline_pef": 428.5,
+      "baseline_hr": 62.0,
+      "baseline_rr": 14.3,
+      "baseline_spo2": 98.0,
+      "pm25_sensitivity": 1.19,
+      "pollen_sensitivity": 0.37
+    }
+  },
+  "clinical_disclaimer": "Synthetic trajectories are for software simulation and algorithmic testing only. They do not reproduce authentic human in-vivo asthma pathophysiology."
+}

@@ -1,0 +1,49 @@
+{
+  "resourceType": "Bundle",
+  "id": "bundle-patient-synth-002",
+  "type": "transaction",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "SYNTH-PAT-002",
+        "gender": "male",
+        "birthDate": "2005-09-21"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-201",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "233678006",
+              "display": "Childhood asthma"
+            }
+          ],
+          "text": "Childhood asthma"
+        },
+        "onsetDateTime": "2012-11-04T00:00:00Z"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-201",
+        "status": "active",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "code": "310291",
+              "display": "Fluticasone propionate 110mcg"
+            }
+          ],
+          "text": "Fluticasone inhaler"
+        },
+        "authoredOn": "2024-08-01T09:00:00Z"
+      }
+    }
+  ]
+}
