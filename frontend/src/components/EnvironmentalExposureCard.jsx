@@ -9,16 +9,77 @@ import {
   ChevronRight 
 } from 'lucide-react';
 
-export default function EnvironmentalExposureCard({ currentObservation, onNavigateEnvironmental, city = 'Bengaluru, KA' }) {
-  const pm25 = currentObservation?.pm25_ug_m3 || 82;
-  const pm10 = currentObservation?.pm10_ug_m3 || 120;
-  const temp = currentObservation?.temperature_c || 32;
-  const humidity = currentObservation?.humidity_pct || 68;
-  const pollenLevel = currentObservation?.pollen_level_0_10 || 7.2;
-  const dust = currentObservation?.dust_exposure_level !== undefined ? currentObservation.dust_exposure_level : 1;
+export default function EnvironmentalExposureCard({ 
+  currentObservation, 
+  monitoringHistory, 
+  onNavigateEnvironmental, 
+  city = 'Bengaluru, KA' 
+}) {
+  const latest = currentObservation || {};
+  const pm25 = latest.pm25_ug_m3 !== undefined && latest.pm25_ug_m3 !== null ? latest.pm25_ug_m3 : 0;
+  const pm10 = latest.pm10_ug_m3 !== undefined && latest.pm10_ug_m3 !== null ? latest.pm10_ug_m3 : 0;
+  const temp = latest.temperature_c !== undefined && latest.temperature_c !== null ? latest.temperature_c : '--';
+  const humidity = latest.humidity_pct !== undefined && latest.humidity_pct !== null ? latest.humidity_pct : '--';
+  const pollenLevel = latest.pollen_level_0_10 !== undefined && latest.pollen_level_0_10 !== null 
+    ? latest.pollen_level_0_10 
+    : (latest.pollen_level !== undefined && latest.pollen_level !== null ? latest.pollen_level : 0);
+  const dust = latest.dust_exposure_level !== undefined ? latest.dust_exposure_level : 0;
 
+  const pm25Status = pm25 >= 75 ? 'High' : pm25 >= 35 ? 'Moderate' : 'Good';
+  const pm10Status = pm10 >= 100 ? 'High' : pm10 >= 50 ? 'Moderate' : 'Good';
   const pollenStatus = pollenLevel >= 6 ? 'High' : pollenLevel >= 3 ? 'Moderate' : 'Low';
   const dustStatus = dust >= 2 ? 'High' : dust === 1 ? 'Moderate' : 'Low';
+
+  const history = monitoringHistory?.recent_observations || (latest.timestamp ? [latest] : []);
+
+  // Compute points for PM2.5, PM10, and Pollen (scaled x10 for visual congruence)
+  const chartData = React.useMemo(() => {
+    if (!history || history.length === 0) return { pm25Path: '', pm10Path: '', pollenPath: '', fillPath: '', pts: [], isElevated: false, peakPt: null, maxVal: 120 };
+
+    const width = 320;
+    const height = 75;
+    const padLeft = 25;
+    const padRight = 10;
+    const padTop = 15;
+    const padBottom = 15;
+    const usableW = width - padLeft - padRight;
+    const usableH = height - padTop - padBottom;
+
+    const maxVal = Math.max(120, ...history.map(h => Math.max(Number(h.pm25_ug_m3) || 0, Number(h.pm10_ug_m3) || 0)));
+
+    const pts = history.map((h, i) => {
+      const x = history.length === 1 ? padLeft + usableW / 2 : padLeft + (i / (history.length - 1)) * usableW;
+      const v25 = Number(h.pm25_ug_m3) || 0;
+      const v10 = Number(h.pm10_ug_m3) || 0;
+      const vPol = (Number(h.pollen_level_0_10) || Number(h.pollen_level) || 0) * 12; // Scale 0-10 to ~0-120
+
+      const y25 = padTop + usableH - (Math.min(maxVal, v25) / maxVal) * usableH;
+      const y10 = padTop + usableH - (Math.min(maxVal, v10) / maxVal) * usableH;
+      const yPol = padTop + usableH - (Math.min(maxVal, vPol) / maxVal) * usableH;
+
+      return { x, y25, y10, yPol, v25, v10, timestamp: h.timestamp };
+    });
+
+    const pm25Path = pts.reduce((acc, p, i) => i === 0 ? `M ${p.x.toFixed(1)} ${p.y25.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.y25.toFixed(1)}`, '');
+    const pm10Path = pts.reduce((acc, p, i) => i === 0 ? `M ${p.x.toFixed(1)} ${p.y10.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.y10.toFixed(1)}`, '');
+    const pollenPath = pts.reduce((acc, p, i) => i === 0 ? `M ${p.x.toFixed(1)} ${p.yPol.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.yPol.toFixed(1)}`, '');
+
+    // Area fill under PM2.5
+    const baselineY = padTop + usableH;
+    const fillPath = pts.length > 0 
+      ? `${pm25Path} L ${pts[pts.length - 1].x.toFixed(1)} ${baselineY} L ${pts[0].x.toFixed(1)} ${baselineY} Z`
+      : '';
+
+    // Find peak PM2.5 point for risk elevated callout
+    let maxP = pts[0];
+    pts.forEach(p => {
+      if (p.v25 > (maxP?.v25 || 0)) maxP = p;
+    });
+
+    const isElevated = (maxP?.v25 || 0) >= 60;
+
+    return { pm25Path, pm10Path, pollenPath, fillPath, pts, isElevated, peakPt: maxP, maxVal };
+  }, [history]);
 
   return (
     <div className="clinical-card">
@@ -147,57 +208,73 @@ export default function EnvironmentalExposureCard({ currentObservation, onNaviga
             <line x1="20" y1="70" x2="310" y2="70" stroke="#f1f5f9" strokeWidth="1" />
 
             {/* Y axis labels */}
-            <text x="5" y="24" fontSize="8.5" fill="#94a3b8">150</text>
-            <text x="10" y="49" fontSize="8.5" fill="#94a3b8">75</text>
+            <text x="5" y="24" fontSize="8.5" fill="#94a3b8">{chartData.maxVal}</text>
+            <text x="10" y="49" fontSize="8.5" fill="#94a3b8">{Math.round(chartData.maxVal / 2)}</text>
             <text x="15" y="74" fontSize="8.5" fill="#94a3b8">0</text>
 
             {/* PM2.5 Area and Line (Red) */}
-            <path
-              d="M 25 50 Q 80 40 140 28 T 240 18 T 310 32 L 310 70 L 25 70 Z"
-              fill="url(#pm25Fill)"
-            />
-            <path
-              d="M 25 50 Q 80 40 140 28 T 240 18 T 310 32"
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+            {chartData.fillPath && (
+              <path
+                d={chartData.fillPath}
+                fill="url(#pm25Fill)"
+              />
+            )}
+            {chartData.pm25Path && (
+              <path
+                d={chartData.pm25Path}
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            )}
 
             {/* PM10 Line (Orange) */}
-            <path
-              d="M 25 60 Q 80 50 140 38 T 240 28 T 310 42"
-              fill="none"
-              stroke="#f97316"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
+            {chartData.pm10Path && (
+              <path
+                d={chartData.pm10Path}
+                fill="none"
+                stroke="#f97316"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            )}
 
             {/* Pollen Line (Green) */}
-            <path
-              d="M 25 68 Q 80 62 140 54 T 240 60 T 310 65"
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
+            {chartData.pollenPath && (
+              <path
+                d={chartData.pollenPath}
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            )}
 
-            {/* Vertical Indicator Line at 19:00 with Risk Elevated Callout */}
-            <line x1="240" y1="12" x2="240" y2="70" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,3" />
-            <circle cx="240" cy="18" r="3.5" fill="#ef4444" />
-
-            {/* "Risk elevated" pill */}
-            <g transform="translate(240, 10)">
-              <rect x="-35" y="-14" width="70" height="15" rx="7.5" fill="#fef2f2" stroke="#fca5a5" strokeWidth="1" />
-              <text x="0" y="-3.5" textAnchor="middle" fill="#dc2626" fontSize="8" fontWeight="700">Risk elevated</text>
-            </g>
+            {/* Risk Elevated Indicator at Peak Point */}
+            {chartData.isElevated && chartData.peakPt && (
+              <g>
+                <line 
+                  x1={chartData.peakPt.x} 
+                  y1={12} 
+                  x2={chartData.peakPt.x} 
+                  y2={70} 
+                  stroke="#ef4444" 
+                  strokeWidth="1.5" 
+                  strokeDasharray="3,3" 
+                />
+                <circle cx={chartData.peakPt.x} cy={chartData.peakPt.y25} r="3.5" fill="#ef4444" />
+                <g transform={`translate(${Math.max(40, Math.min(270, chartData.peakPt.x))}, 10)`}>
+                  <rect x="-35" y="-14" width="70" height="15" rx="7.5" fill="#fef2f2" stroke="#fca5a5" strokeWidth="1" />
+                  <text x="0" y="-3.5" textAnchor="middle" fill="#dc2626" fontSize="8" fontWeight="700">Risk elevated</text>
+                </g>
+              </g>
+            )}
 
             {/* X axis time ticks */}
-            <text x="25" y="82" fontSize="8.5" fill="#94a3b8">00:00</text>
-            <text x="95" y="82" fontSize="8.5" fill="#94a3b8">06:00</text>
-            <text x="165" y="82" fontSize="8.5" fill="#94a3b8">12:00</text>
-            <text x="235" y="82" fontSize="8.5" fill="#94a3b8">18:00</text>
-            <text x="295" y="82" fontSize="8.5" fill="#94a3b8">24:00</text>
+            <text x="25" y="82" fontSize="8.5" fill="#94a3b8">Past</text>
+            <text x="160" y="82" fontSize="8.5" fill="#94a3b8" textAnchor="middle">12h ago</text>
+            <text x="300" y="82" fontSize="8.5" fill="#94a3b8" textAnchor="end">Current</text>
           </svg>
         </div>
       </div>

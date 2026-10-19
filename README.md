@@ -208,7 +208,7 @@ Open your browser to `http://127.0.0.1:8000`.
 ## 9. Demonstrating Primary Features
 
 The doctor-facing dashboard provides an integrated, professional clinical workflow:
-* **Anatomical Respiratory Visualizer:** 4 distinct sub-tabs (Lungs, Airways with lumen diameter dynamic scaling, CT Scan with DICOM study viewer, and 3D View with rotatable thoracic ribcage model).
+* **Anatomical Respiratory Visualizer:** 3 distinct sub-tabs (Lungs with regional ventilation dynamics, CT Scan with DICOM study viewer, and 3D View with rotatable thoracic ribcage model).
 * **Future-Event Prediction Card:** Displays 2-hour deterioration probability (e.g., 19% Low / 96% High), model confidence score, delta vs. previous observation, and top contributing feature bars.
 * **Diagnostic Lab Reports:** Complete genuine panels (Eosinophils, Total IgE, CRP, Vitamin D, Serum IgA) with reference ranges and abnormal flags parsed from Synthea FHIR records.
 * **Diagnostic CT Chest Viewer Modal:** High-resolution axial CT chest slices with window presets (Lung -600/1500 vs Mediastinal 40/400), slice navigation slider, orientation markers, and diagnostic radiology report.

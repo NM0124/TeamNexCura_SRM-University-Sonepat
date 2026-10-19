@@ -65,3 +65,70 @@ def test_scenario_simulation_never_mutates_live_twin():
     assert twin.current_observation["pm25_ug_m3"] == 12.0
     assert twin.current_observation["peak_flow_pef_l_min"] == 450
     assert len(twin.observations) == 1
+
+
+def test_api_patient_switching_and_isolation():
+    from fastapi.testclient import TestClient
+    from server import app
+
+    with TestClient(app) as client:
+        # 1. Fetch Patient 1 and Patient 2 profiles
+        res1 = client.get("/api/patients/PAT-001")
+        res2 = client.get("/api/patients/PAT-002")
+
+        assert res1.status_code == 200
+        assert res2.status_code == 200
+
+        data1 = res1.json()
+        data2 = res2.json()
+
+        assert data1["patient_id"] == "PAT-001"
+        assert data2["patient_id"] == "PAT-002"
+        # Ensure they have independent baselines and state
+        assert data1["patient_id"] != data2["patient_id"]
+
+        # 2. Monitoring endpoint filtering
+        mon1 = client.get("/api/patients/PAT-001/monitoring?limit=10")
+        mon2 = client.get("/api/patients/PAT-002/monitoring?limit=10")
+
+        assert mon1.status_code == 200
+        assert mon2.status_code == 200
+
+        obs1 = mon1.json().get("recent_observations", [])
+        obs2 = mon2.json().get("recent_observations", [])
+
+        for o in obs1:
+            assert o.get("patient_id") == "PAT-001"
+        for o in obs2:
+            assert o.get("patient_id") == "PAT-002"
+
+
+def test_api_date_filtering():
+    from fastapi.testclient import TestClient
+    from server import app
+
+    with TestClient(app) as client:
+        # Filtering with impossible future date range returns empty list
+        mon_future = client.get("/api/patients/PAT-001/monitoring?start_date=2099-01-01T00:00:00&end_date=2099-12-31T23:59:59")
+        assert mon_future.status_code == 200
+        assert len(mon_future.json()["recent_observations"]) == 0
+
+        timeline_future = client.get("/api/patients/PAT-001/timeline?start_date=2099-01-01T00:00:00&end_date=2099-12-31T23:59:59")
+        assert timeline_future.status_code == 200
+        assert len(timeline_future.json()) == 0
+
+
+def test_api_invalid_patient_returns_404():
+    from fastapi.testclient import TestClient
+    from server import app
+
+    with TestClient(app) as client:
+        bad_id = "NON_EXISTENT_PATIENT_999"
+
+        assert client.get(f"/api/patients/{bad_id}").status_code == 404
+        assert client.get(f"/api/patients/{bad_id}/labs").status_code == 404
+        assert client.get(f"/api/patients/{bad_id}/timeline").status_code == 404
+        assert client.get(f"/api/patients/{bad_id}/prediction").status_code == 404
+        assert client.get(f"/api/patients/{bad_id}/triggers").status_code == 404
+        assert client.get(f"/api/patients/{bad_id}/monitoring").status_code == 404
+

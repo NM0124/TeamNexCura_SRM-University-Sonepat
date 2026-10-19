@@ -114,21 +114,44 @@ export default function PulseOximeterWidget({ oximeterData, currentObservation, 
               <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-muted)' }}>%</span>
             </div>
 
-            {/* Plethysmograph waveform sparkline */}
+            {/* Plethysmograph waveform sparkline driven by patient pulse rate */}
             <div style={{ height: 35, marginTop: 4 }}>
-              {isConnected ? (
-                <svg viewBox="0 0 200 35" width="100%" height="100%">
-                  <path
-                    d="M 0 20 Q 20 20, 25 5 Q 30 30, 35 20 Q 55 20, 60 5 Q 65 30, 70 20 Q 90 20, 95 5 Q 100 30, 105 20 Q 125 20, 130 5 Q 135 30, 140 20 Q 160 20, 165 5 Q 170 30, 175 20 L 200 20"
-                    fill="none"
-                    stroke={isCritical ? '#dc2626' : '#0284c7'}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
+              {isConnected && spo2 !== '--' ? (
+                (() => {
+                  const hrVal = Number(pulseRate) || 75;
+                  // Number of cycles across 200px width proportional to heart rate
+                  const cycles = Math.max(2, Math.min(6, Math.round(hrVal / 24)));
+                  const cycleWidth = 200 / cycles;
+                  let pathParts = [`M 0 22`];
+                  for (let c = 0; c < cycles; c++) {
+                    const startX = c * cycleWidth;
+                    const peakX = startX + cycleWidth * 0.25;
+                    const notchX = startX + cycleWidth * 0.45;
+                    const dicroticPeakX = startX + cycleWidth * 0.6;
+                    const endX = (c + 1) * cycleWidth;
+                    // Amplitude modulated by SpO2
+                    const peakY = isCritical ? 12 : 5;
+                    pathParts.push(`Q ${startX + cycleWidth * 0.1} 22, ${peakX} ${peakY}`);
+                    pathParts.push(`Q ${peakX + cycleWidth * 0.1} 24, ${notchX} 20`);
+                    pathParts.push(`Q ${notchX + cycleWidth * 0.05} 17, ${dicroticPeakX} 15`);
+                    pathParts.push(`Q ${dicroticPeakX + cycleWidth * 0.15} 22, ${endX} 22`);
+                  }
+                  return (
+                    <svg viewBox="0 0 200 35" width="100%" height="100%">
+                      <path
+                        d={pathParts.join(' ')}
+                        fill="none"
+                        stroke={isCritical ? '#dc2626' : isWarning ? '#d97706' : '#0284c7'}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  );
+                })()
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', height: '100%', fontSize: 11, color: '#94a3b8' }}>
-                  No plethysmographic signal (Sensor offline)
+                  No plethysmographic signal (Sensor offline or no observation data)
                 </div>
               )}
             </div>
