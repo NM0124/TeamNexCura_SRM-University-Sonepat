@@ -103,7 +103,7 @@ export default function ModelEvaluationView({ evaluationData }) {
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>Forecast Accuracy &amp; Reliability Lab (Innovation C)</span>
+              <span>Forecast Accuracy &amp; Reliability Lab</span>
               <span className="counter-badge" style={{ background: '#ecfdf5', color: '#059669' }}>
                 70/30 Chronological Split
               </span>

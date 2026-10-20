@@ -120,7 +120,7 @@ export default function EnvironmentalIntelligenceView({
         <div className="card-header-bar">
           <div className="card-title-group">
             <Wind size={16} style={{ color: '#2563eb' }} />
-            <span>Personalized Environmental Trigger Fingerprint (Innovation A)</span>
+            <span>Personalized Environmental Trigger Fingerprint</span>
           </div>
 
           {/* Lag window selector */}

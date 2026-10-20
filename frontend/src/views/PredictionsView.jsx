@@ -95,7 +95,7 @@ export default function PredictionsView({
         <div className="card-header-bar">
           <div className="card-title-group">
             <Sparkles size={16} style={{ color: '#2563eb' }} />
-            <span>Evidence-Traceable Prediction Audit Log (Innovation B)</span>
+            <span>Evidence-Traceable Prediction Audit Log</span>
           </div>
           <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
             Recorded Forecasts: {historyList.length}

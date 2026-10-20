@@ -411,8 +411,8 @@ export default function App() {
             <Activity size={22} />
           </div>
           <div className="brand-text">
-            <h1>Asthma<span>Twin</span></h1>
-            <p>Predict. Prevent. Personalize.</p>
+            <h1>Asthra</h1>
+            <p>Anticipate. Understand. Act.</p>
           </div>
         </div>
 
