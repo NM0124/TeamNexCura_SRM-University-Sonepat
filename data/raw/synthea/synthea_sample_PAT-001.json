@@ -256,18 +256,6 @@
         "interpretation": [{"coding": [{"code": "N"}]}],
         "effectiveDateTime": "2026-03-12T10:15:00Z"
       }
-    },
-    {
-      "resource": {
-        "resourceType": "ImagingStudy",
-        "id": "img-pat001-ct",
-        "modality": [{"code": "CT", "display": "Computed Tomography"}],
-        "started": "2026-03-12T11:30:00Z",
-        "numberOfInstances": 3,
-        "description": "High-Resolution Computed Tomography (HRCT) Chest",
-        "bodySite": {"display": "Chest / Thorax"},
-        "reasonCode": [{"text": "Mild air trapping with bronchial wall thickening. No consolidation. (Synthetic example)"}]
-      }
     }
   ]
 }
