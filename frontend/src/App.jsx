@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Activity, 
   User, 
@@ -20,7 +20,10 @@ import {
   RotateCcw,
   Heart,
   ArrowRight,
-  Info
+  Info,
+  Users,
+  Scan,
+  Check
 } from 'lucide-react';
 
 import AnatomicalLungViewer from './components/AnatomicalLungViewer';
@@ -64,6 +67,30 @@ export default function App() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchHighlightedIndex, setSearchHighlightedIndex] = useState(0);
+  const searchContainerRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  // Global click-outside and Escape key listener
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsSearchFocused(false);
+      }
+    };
+    const handleGlobalKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsSearchFocused(false);
+        if (searchInputRef.current) searchInputRef.current.blur();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
 
   // Modals state
   const [isCTViewerOpen, setIsCTViewerOpen] = useState(false);
@@ -257,88 +284,122 @@ export default function App() {
     'PAT-002': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     'PAT-003': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     'PAT-004': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    'PAT-005': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+    'PAT-005': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    'CSV_PATIENT_001': 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    'SYNTH-PAT-001': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    'SYNTH-PAT-002': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
   };
 
-  // Search Results Generator
-  const searchResults = (() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase().trim();
-    const results = [];
+  // Clinical modules for search
+  const clinicalModules = [
+    {
+      id: 'spiro',
+      title: 'Spirometry Reports (PEF, FEV1, FVC)',
+      subtitle: 'Longitudinal lung function curves & obstruction ratios',
+      icon: Activity,
+      category: 'Diagnostic Lab',
+      action: () => { setActiveNav('Patient Profile'); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'ct-scan',
+      title: 'Diagnostic Chest CT Scan',
+      subtitle: 'High-resolution DICOM slices & bronchial wall evaluation',
+      icon: Scan,
+      category: 'Imaging',
+      action: () => { setIsCTViewerOpen(true); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'labs',
+      title: 'Blood Serology & Allergen Labs (IgE, Eosinophils)',
+      subtitle: 'Inflammatory biomarkers and allergic sensitization',
+      icon: FileText,
+      category: 'Biomarkers',
+      action: () => { setActiveNav('Patient Profile'); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'aqi',
+      title: 'Environmental AQI & Triggers (PM2.5, Pollen)',
+      subtitle: 'Cross-correlation and lag-stratified exposure analysis',
+      icon: Wind,
+      category: 'Intelligence',
+      action: () => { setActiveNav('Environmental Analysis'); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'scenario',
+      title: 'In Silico Scenario Lab (Hypothetical Perturbations)',
+      subtitle: 'What-if parameter simulator with isolated digital twin copy',
+      icon: Sliders,
+      category: 'Simulation',
+      action: () => { setActiveNav('Scenario Simulation'); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'timeline',
+      title: 'Chronological Clinical Event Timeline',
+      subtitle: 'Telemetry spikes, desaturations, and deterioration events',
+      icon: Clock,
+      category: 'Telemetry',
+      action: () => { setActiveNav('Event Timeline'); setSearchQuery(''); setIsSearchFocused(false); }
+    },
+    {
+      id: 'evaluation',
+      title: 'Model Evaluation Lab (PR-AUC, Brier Score, Holdout)',
+      subtitle: 'Fair benchmark across EHR, Dynamic, and Fused paradigms',
+      icon: BarChart3,
+      category: 'Evaluation',
+      action: () => { setActiveNav('Model Evaluation'); setSearchQuery(''); setIsSearchFocused(false); }
+    }
+  ];
 
-    // Search Patients
-    patientsList.forEach((p) => {
+  const q = searchQuery.toLowerCase().trim();
+
+  // Filtered Patients
+  const patientSearchResults = useMemo(() => {
+    if (!q) {
+      return patientsList;
+    }
+    return patientsList.filter((p) => {
       const matchId = p.patient_id?.toLowerCase().includes(q);
       const matchName = p.name?.toLowerCase().includes(q);
       const matchCity = p.city?.toLowerCase().includes(q);
       const matchDiag = p.diagnosis?.toLowerCase().includes(q);
-      if (matchId || matchName || matchCity || matchDiag) {
-        results.push({
-          type: 'patient',
-          title: `${p.patient_id} - ${p.name || 'Virtual Patient'}`,
-          subtitle: `${p.city || 'City'} • ${p.age || 28} yrs • ${p.diagnosis || 'Asthma'}`,
-          action: () => {
-            setSelectedPatientId(p.patient_id);
-            setActiveNav('Overview');
-            setSearchQuery('');
-            setIsSearchFocused(false);
-          }
-        });
-      }
+      const matchAge = String(p.age || '').includes(q);
+      return matchId || matchName || matchCity || matchDiag || matchAge;
     });
+  }, [patientsList, q]);
 
-    // Search Clinical Views and Reports
-    const topics = [
-      {
-        title: 'Spirometry Reports (PEF, FEV1, FVC)',
-        subtitle: 'Longitudinal lung function curves & obstruction ratios',
-        action: () => { setActiveNav('Patient Profile'); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'Diagnostic Chest CT Scan',
-        subtitle: 'High-resolution DICOM slices & bronchial wall evaluation',
-        action: () => { setIsCTViewerOpen(true); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'Blood Serology & Allergen Labs (IgE, Eosinophils)',
-        subtitle: 'Inflammatory biomarkers and allergic sensitization',
-        action: () => { setActiveNav('Patient Profile'); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'Environmental AQI & Triggers (PM2.5, Pollen)',
-        subtitle: 'Cross-correlation and lag-stratified exposure analysis',
-        action: () => { setActiveNav('Environmental Analysis'); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'In Silico Scenario Lab (Hypothetical Perturbations)',
-        subtitle: 'What-if parameter simulator with isolated digital twin copy',
-        action: () => { setActiveNav('Scenario Simulation'); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'Chronological Clinical Event Timeline',
-        subtitle: 'Telemetry spikes, desaturations, and deterioration events',
-        action: () => { setActiveNav('Event Timeline'); setSearchQuery(''); setIsSearchFocused(false); }
-      },
-      {
-        title: 'Model Evaluation Lab (PR-AUC, Brier Score, Holdout)',
-        subtitle: 'Fair benchmark across EHR, Dynamic, and Fused paradigms',
-        action: () => { setActiveNav('Model Evaluation'); setSearchQuery(''); setIsSearchFocused(false); }
-      }
-    ];
-
-    topics.forEach((t) => {
-      if (t.title.toLowerCase().includes(q) || t.subtitle.toLowerCase().includes(q)) {
-        results.push({
-          type: 'report',
-          title: t.title,
-          subtitle: t.subtitle,
-          action: t.action
-        });
-      }
+  // Filtered Clinical Tools & Modules
+  const clinicalSearchResults = useMemo(() => {
+    if (!q) return [];
+    return clinicalModules.filter((m) => {
+      return m.title.toLowerCase().includes(q) || 
+             m.subtitle.toLowerCase().includes(q) || 
+             m.category.toLowerCase().includes(q);
     });
+  }, [q]);
 
-    return results;
-  })();
+  const flatSearchResults = useMemo(() => {
+    const items = [];
+    patientSearchResults.forEach((p) => {
+      items.push({
+        type: 'patient',
+        id: p.patient_id,
+        action: () => {
+          setSelectedPatientId(p.patient_id);
+          setActiveNav('Overview');
+          setSearchQuery('');
+          setIsSearchFocused(false);
+        }
+      });
+    });
+    clinicalSearchResults.forEach((m) => {
+      items.push({
+        type: 'module',
+        id: m.id,
+        action: m.action
+      });
+    });
+    return items;
+  }, [patientSearchResults, clinicalSearchResults]);
 
   return (
     <div className="app-layout">
@@ -387,19 +448,25 @@ export default function App() {
               { patient_id: 'PAT-003', age: 19, diagnosis: 'Asthma' },
               { patient_id: 'PAT-004', age: 42, diagnosis: 'Asthma' },
               { patient_id: 'PAT-005', age: 31, diagnosis: 'Asthma' },
-            ]).slice(0, 5).map((p) => {
+            ]).map((p) => {
               const isSelected = selectedPatientId === p.patient_id;
-              const photo = avatarMap[p.patient_id] || avatarMap['PAT-001'];
+              const photo = avatarMap[p.patient_id];
               return (
                 <div
                   key={p.patient_id}
                   className={`patient-item ${isSelected ? 'selected' : ''}`}
                   onClick={() => setSelectedPatientId(p.patient_id)}
                 >
-                  <img src={photo} alt={p.patient_id} className="patient-avatar" />
+                  {photo ? (
+                    <img src={photo} alt={p.patient_id} className="patient-avatar" />
+                  ) : (
+                    <div className="patient-avatar-initials">
+                      {(p.name || p.patient_id).slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div className="patient-info">
                     <span className="patient-name-id">{p.patient_id}</span>
-                    <span className="patient-subtext">{p.name ? `${p.name} • ` : ''}Asthma</span>
+                    <span className="patient-subtext">{p.name ? `${p.name} • ` : ''}{p.diagnosis || 'Asthma'}</span>
                   </div>
                 </div>
               );
@@ -420,69 +487,174 @@ export default function App() {
       <div className="app-main">
         {/* Top Navigation Bar with Functional Search and Right-Shifted Telemetry Controls */}
         <header className="top-navbar">
-          <div className="search-box" style={{ position: 'relative' }}>
-            <Search size={16} style={{ color: 'var(--text-light)' }} />
-            <input 
-              type="text" 
-              placeholder="Search patients, profiles, reports, lab biomarkers..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
-              >
-                <X size={14} />
-              </button>
-            )}
+          <div className="search-box-container" ref={searchContainerRef}>
+            <div className={`search-box ${isSearchFocused ? 'focused' : ''}`}>
+              <Search size={16} className="search-icon" />
+              <input 
+                ref={searchInputRef}
+                type="text" 
+                placeholder="Search patient records (ID, name, city) or clinical labs..." 
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchHighlightedIndex(0);
+                  if (!isSearchFocused) setIsSearchFocused(true);
+                }}
+                onFocus={() => {
+                  setIsSearchFocused(true);
+                  setSearchHighlightedIndex(0);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsSearchFocused(false);
+                    setSearchQuery('');
+                    searchInputRef.current?.blur();
+                  } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSearchHighlightedIndex((prev) => Math.min(prev + 1, flatSearchResults.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSearchHighlightedIndex((prev) => Math.max(prev - 1, 0));
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (flatSearchResults.length > 0 && flatSearchResults[searchHighlightedIndex]) {
+                      flatSearchResults[searchHighlightedIndex].action();
+                    }
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button 
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  title="Clear search query"
+                  type="button"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
 
-            {/* Functional search dropdown */}
-            {isSearchFocused && searchResults.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                marginTop: 6,
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                zIndex: 100,
-                maxHeight: '320px',
-                overflowY: 'auto'
-              }}>
-                {searchResults.map((res, idx) => (
-                  <div
-                    key={idx}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      res.action();
-                    }}
-                    style={{
-                      padding: '10px 14px',
-                      borderBottom: idx < searchResults.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'background 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{res.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{res.subtitle}</div>
-                    </div>
-                    <span className="counter-badge" style={{ background: res.type === 'patient' ? '#eff6ff' : '#f8fafc', color: res.type === 'patient' ? '#2563eb' : '#64748b' }}>
-                      {res.type.toUpperCase()}
-                    </span>
+            {/* Structured, Non-overlapping, Categorized Dropdown */}
+            {isSearchFocused && (
+              <div className="search-dropdown-menu">
+                {flatSearchResults.length === 0 ? (
+                  <div className="search-empty-state">
+                    <p className="empty-title">No matching records found</p>
+                    <p className="empty-desc">No patients or clinical modules matched &ldquo;{searchQuery}&rdquo;</p>
                   </div>
-                ))}
+                ) : (
+                  <>
+                    {/* Category 1: Patient Cohort Records */}
+                    {patientSearchResults.length > 0 && (
+                      <div className="search-category-group">
+                        <div className="search-category-header">
+                          <Users size={12} />
+                          <span>PATIENTS ({patientSearchResults.length})</span>
+                        </div>
+                        {patientSearchResults.map((p, idx) => {
+                          const isHighlighted = flatSearchResults[searchHighlightedIndex]?.id === p.patient_id;
+                          const isCurrent = p.patient_id === selectedPatientId;
+                          const photo = avatarMap[p.patient_id];
+                          return (
+                            <div
+                              key={p.patient_id}
+                              className={`search-result-row ${isHighlighted ? 'highlighted' : ''} ${isCurrent ? 'current-active' : ''}`}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setSelectedPatientId(p.patient_id);
+                                setActiveNav('Overview');
+                                setSearchQuery('');
+                                setIsSearchFocused(false);
+                              }}
+                              onMouseEnter={() => setSearchHighlightedIndex(idx)}
+                            >
+                              <div className="search-row-avatar">
+                                {photo ? (
+                                  <img src={photo} alt={p.patient_id} />
+                                ) : (
+                                  <div className="search-avatar-fallback">
+                                    {(p.name || p.patient_id).slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="search-row-main">
+                                <div className="search-row-title">
+                                  <span className="search-pid-pill">{p.patient_id}</span>
+                                  <span className="search-pname">{p.name || 'Virtual Patient'}</span>
+                                  {isCurrent && (
+                                    <span className="search-current-badge">
+                                      <Check size={10} /> Active Twin
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="search-row-subtitle">
+                                  <span>{p.age ? `${p.age} y/o` : '28 y/o'}</span>
+                                  <span className="sub-divider">•</span>
+                                  <span>{p.gender || 'Female'}</span>
+                                  <span className="sub-divider">•</span>
+                                  <span className="sub-city">{p.city || 'Bengaluru, KA'}</span>
+                                  <span className="sub-divider">•</span>
+                                  <span className="sub-diagnosis">{p.diagnosis || 'Asthma (J45.9)'}</span>
+                                </div>
+                              </div>
+                              <span className="search-type-badge patient">PATIENT</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Category 2: Clinical Modules & Diagnostics */}
+                    {clinicalSearchResults.length > 0 && (
+                      <div className="search-category-group">
+                        <div className="search-category-header">
+                          <FileText size={12} />
+                          <span>CLINICAL VIEWS & DIAGNOSTICS ({clinicalSearchResults.length})</span>
+                        </div>
+                        {clinicalSearchResults.map((m, mIdx) => {
+                          const flatIdx = patientSearchResults.length + mIdx;
+                          const isHighlighted = searchHighlightedIndex === flatIdx;
+                          const IconComp = m.icon;
+                          return (
+                            <div
+                              key={m.id}
+                              className={`search-result-row ${isHighlighted ? 'highlighted' : ''}`}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                m.action();
+                              }}
+                              onMouseEnter={() => setSearchHighlightedIndex(flatIdx)}
+                            >
+                              <div className="search-module-icon-box">
+                                <IconComp size={15} />
+                              </div>
+                              <div className="search-row-main">
+                                <div className="search-row-title">
+                                  <span className="search-pname">{m.title}</span>
+                                </div>
+                                <div className="search-row-subtitle">
+                                  <span className="sub-diagnosis">{m.subtitle}</span>
+                                </div>
+                              </div>
+                              <span className="search-type-badge module">{m.category.toUpperCase()}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Footer keyboard navigation helper */}
+                    <div className="search-dropdown-footer">
+                      <span><kbd>Esc</kbd> close</span>
+                      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+                      <span><kbd>↵</kbd> select</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -551,11 +723,17 @@ export default function App() {
               <div className="patient-banner-card">
                 <div className="banner-left">
                   <div className="patient-large-avatar-box">
-                    <img 
-                      src={avatarMap[selectedPatientId] || avatarMap['PAT-001']} 
-                      alt="Patient" 
-                      className="patient-large-avatar" 
-                    />
+                    {avatarMap[selectedPatientId] ? (
+                      <img 
+                        src={avatarMap[selectedPatientId]} 
+                        alt="Patient" 
+                        className="patient-large-avatar" 
+                      />
+                    ) : (
+                      <div className="patient-large-avatar-initials">
+                        {(currentPatient.name || selectedPatientId).slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     <span className="avatar-online-dot" />
                   </div>
 
@@ -645,6 +823,8 @@ export default function App() {
               <div className="dashboard-bottom-grid">
                 <LabReportsCard
                   labsData={labsData}
+                  currentObservation={currentObservation}
+                  baselineData={patientProfile?.baseline_state}
                   onViewHistory={() => setActiveNav('Patient Profile')}
                 />
 
