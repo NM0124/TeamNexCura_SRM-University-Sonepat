@@ -8,15 +8,13 @@ from datetime import datetime
 from pathlib import Path
 import json
 
-import io
-from fastapi import FastAPI, HTTPException, Query, Body, UploadFile, File, Response
+from fastapi import FastAPI, HTTPException, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from config.settings import settings
 from src.storage import init_db
 from src.prediction.model_registry import ModelRegistry
-from src.imaging.ct_volume_engine import CTVolumeEngine, CT_WINDOW_PRESETS
 from src.services.patient_service import PatientService
 from src.simulation.multi_patient_manager import MultiPatientSimulationManager
 from src.prediction.trigger_fingerprint import EnvironmentalTriggerAnalyzer
@@ -55,7 +53,6 @@ def startup_event():
     """Initializes database, imports Synthea cohorts, loads models, and primes simulation."""
     init_db()
     ModelRegistry.load_models()
-    CTVolumeEngine.initialize_default_studies()
     state.patient_service = PatientService()
     state.patient_service.load_synthea_cohort()
     state.sim_manager = state.patient_service.sim_manager or MultiPatientSimulationManager()
