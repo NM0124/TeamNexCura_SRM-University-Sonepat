@@ -222,6 +222,7 @@ def get_patient_ehr(patient_id: str):
         "patient_id": patient_id,
         "has_ehr": True,
         "provenance": ehr.provenance_source,
+        "demographics": ehr.demographics.model_dump(),
         "summary": ehr.to_display_summary(),
         "asthma_history": ehr.asthma_history.model_dump(),
         "encounters": [e.model_dump() for e in ehr.encounters],
@@ -234,7 +235,10 @@ def get_patient_ehr(patient_id: str):
 @app.get("/api/patients/{patient_id}/labs")
 def get_patient_labs(patient_id: str):
     twin = state.patient_service.get_patient_twin(patient_id)
-    if not twin or not twin.ehr_profile:
+    if not twin:
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
+
+    if not twin.ehr_profile:
         return []
 
     reports = twin.ehr_profile.lab_reports
@@ -269,15 +273,47 @@ def get_patient_imaging(patient_id: str):
 
 
 @app.get("/api/patients/{patient_id}/monitoring")
-def get_patient_monitoring(patient_id: str, limit: int = 40):
+def get_patient_monitoring(
+    patient_id: str, 
+    limit: Optional[int] = Query(default=None, ge=1, le=1000),
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None)
+):
     twin = state.patient_service.get_patient_twin(patient_id)
     if not twin:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
 
-    obs_list = twin.observations[-limit:] if twin.observations else []
+    obs = [o for o in (twin.observations or []) if str(o.get("patient_id", patient_id)) == patient_id]
+
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+            obs = [
+                o for o in obs 
+                if (datetime.fromisoformat(str(o["timestamp"]).replace("Z", "+00:00")) if isinstance(o.get("timestamp"), (str, datetime)) else datetime.min) >= start_dt
+            ]
+        except Exception:
+            pass
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            obs = [
+                o for o in obs 
+                if (datetime.fromisoformat(str(o["timestamp"]).replace("Z", "+00:00")) if isinstance(o.get("timestamp"), (str, datetime)) else datetime.max) <= end_dt
+            ]
+        except Exception:
+            pass
+
+    total_count = len(obs)
+    if limit is not None:
+        obs_list = obs[-limit:]
+    else:
+        obs_list = obs[-40:] if len(obs) > 40 else obs
+
     return {
         "patient_id": patient_id,
-        "total_observations": len(twin.observations),
+        "total_observations": total_count,
         "recent_observations": obs_list
     }
 
@@ -320,11 +356,10 @@ def reset_simulation(patient_id: str):
 def get_patient_prediction(patient_id: str):
     twin = state.patient_service.get_patient_twin(patient_id)
     if not twin:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
 
     pred = twin.latest_prediction
     if not pred:
-        # Evaluate now
         from src.prediction.predictor import RiskPredictor
         pred = RiskPredictor.evaluate_risk(twin, use_ml_model=True)
 
@@ -333,35 +368,56 @@ def get_patient_prediction(patient_id: str):
 
     # Calculate delta from previous
     prev_score = twin.prediction_history[-2].get("risk_score") if len(twin.prediction_history) >= 2 else None
-    curr_score = pred.get("risk_score", 0.68)
-    delta_pct = round((curr_score - prev_score) * 100.0, 1) if (prev_score is not None and curr_score is not None) else 32.0
+    curr_score = pred.get("risk_score")
+    if curr_score is None:
+        curr_score = 0.0
 
-    factors = latest_evidence.get("top_contributing_factors", []) if latest_evidence else [
-        {"feature": "PEF decline (recent trend)", "weight": 0.32, "category": "respiratory"},
-        {"feature": "PM2.5 exposure", "weight": 0.21, "category": "environmental"},
-        {"feature": "Increased respiratory rate", "weight": 0.18, "category": "respiratory"},
-        {"feature": "Symptom severity", "weight": 0.17, "category": "symptoms"},
-        {"feature": "Low sleep duration", "weight": 0.12, "category": "sleep"}
-    ]
+    delta_pct = round((curr_score - prev_score) * 100.0, 1) if (prev_score is not None and curr_score is not None) else 0.0
+
+    # Build patient-specific contributing factors dynamically from current features if latest_evidence is absent
+    if latest_evidence and latest_evidence.get("top_contributing_factors"):
+        factors = latest_evidence["top_contributing_factors"]
+    elif twin.current_features:
+        from src.prediction.evidence_tracer import EvidenceTracer
+        ev_temp = EvidenceTracer.create_evidence_record(
+            patient_id=patient_id,
+            current_features=twin.current_features,
+            risk_score=curr_score,
+            risk_category=pred.get("risk_category", "low"),
+            model_name=pred.get("model_name", "Fused HistGradientBoosting"),
+            cutoff_time=datetime.utcnow(),
+            data_quality_status=twin.quality_assessment.status
+        )
+        factors = ev_temp.top_contributing_factors
+    else:
+        factors = []
+
+    model_conf = latest_evidence.get("model_confidence") if latest_evidence else (0.80 if twin.observations else 0.50)
+    explanation = latest_evidence.get("explanation") if latest_evidence else (
+        f"Inference generated for patient {patient_id} with current risk level {pred.get('risk_category', 'low').upper()}."
+    )
 
     return {
         "patient_id": patient_id,
         "prediction_horizon": "Next 2 Hours",
         "target_definition": "Probability of PEF falling below 80% within next 2 hours",
-        "risk_category": pred.get("risk_category", "high").upper(),
+        "risk_category": pred.get("risk_category", "low").upper(),
         "risk_score": curr_score,
-        "risk_percentage": int(curr_score * 100) if curr_score is not None else 68,
+        "risk_percentage": int(curr_score * 100) if curr_score is not None else 0,
         "delta_vs_previous_pct": delta_pct,
-        "model_confidence": latest_evidence.get("model_confidence", 0.72) if latest_evidence else 0.72,
+        "model_confidence": model_conf,
         "model_name": pred.get("model_name", "Fused HistGradientBoosting (scikit-learn)"),
         "top_contributing_factors": factors,
         "data_quality_status": twin.quality_assessment.status,
-        "explanation": latest_evidence.get("explanation", "") if latest_evidence else "Recent elevated PM2.5 and declining PEF trend drive elevated deterioration risk."
+        "explanation": explanation
     }
 
 
 @app.get("/api/patients/{patient_id}/prediction/history")
 def get_prediction_history(patient_id: str):
+    twin = state.patient_service.get_patient_twin(patient_id)
+    if not twin:
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
     evidence_history = state.sim_manager.evidence_stores.get(patient_id, [])
     return [rec.to_dict() for rec in reversed(evidence_history)]
 
@@ -370,7 +426,7 @@ def get_prediction_history(patient_id: str):
 def get_patient_triggers(patient_id: str):
     twin = state.patient_service.get_patient_twin(patient_id)
     if not twin:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
 
     ref_pef = twin.baseline_state.pef_reference_value if twin.baseline_state else 450.0
     result = EnvironmentalTriggerAnalyzer.analyze_patient_triggers(
@@ -382,14 +438,37 @@ def get_patient_triggers(patient_id: str):
 
 
 @app.get("/api/patients/{patient_id}/timeline")
-def get_patient_timeline(patient_id: str):
+def get_patient_timeline(
+    patient_id: str,
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None)
+):
     twin = state.patient_service.get_patient_twin(patient_id)
     if not twin:
-        raise HTTPException(status_code=404, detail="Patient not found")
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_id}' not found")
+
+    obs = twin.observations
+    if start_date or end_date:
+        filtered_obs = []
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00")) if start_date else None
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00")) if end_date else None
+        for o in obs:
+            t = o.get("timestamp")
+            if t:
+                try:
+                    dt = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
+                    if start_dt and dt < start_dt:
+                        continue
+                    if end_dt and dt > end_dt:
+                        continue
+                except Exception:
+                    pass
+            filtered_obs.append(o)
+        obs = filtered_obs
 
     ref_pef = twin.baseline_state.pef_reference_value if twin.baseline_state else 450.0
     timeline = IndianUrbanEnvironmentalService.build_exposure_timeline(
-        observations=twin.observations,
+        observations=obs,
         predictions=twin.prediction_history,
         pef_reference=ref_pef
     )
@@ -397,8 +476,19 @@ def get_patient_timeline(patient_id: str):
     # Merge twin.timeline_events (observations, baseline shifts, simulation alerts)
     for evt in twin.timeline_events:
         evt_type = evt.get("event_type", "observation")
+        evt_ts = evt.get("timestamp")
+        if start_date or end_date:
+            try:
+                dt = datetime.fromisoformat(str(evt_ts).replace("Z", "+00:00"))
+                if start_date and dt < datetime.fromisoformat(start_date.replace("Z", "+00:00")):
+                    continue
+                if end_date and dt > datetime.fromisoformat(end_date.replace("Z", "+00:00")):
+                    continue
+            except Exception:
+                pass
+
         timeline.append({
-            "timestamp": evt.get("timestamp"),
+            "timestamp": evt_ts,
             "event_type": evt_type,
             "severity": "high" if "deterioration" in evt_type or "alert" in evt_type else "info",
             "badge": evt_type.replace("_", " ").title(),

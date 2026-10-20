@@ -6,7 +6,7 @@ Exports dataset and reproducibility metadata JSON.
 """
 
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
 import json
 import numpy as np

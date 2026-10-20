@@ -84,25 +84,25 @@ export default function HistoricalEHRView({ patientId, ehrData, labsData, imagin
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Diagnosis Date:</span>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>
-                  {ehr.asthma_history?.diagnosis_date ? new Date(ehr.asthma_history.diagnosis_date).toLocaleDateString() : '10 Apr 2015'}
+                  {ehr.asthma_history?.diagnosis_date ? new Date(ehr.asthma_history.diagnosis_date).toLocaleDateString() : 'Not documented'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Historical Emergency Visits:</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
-                  {ehr.asthma_history?.emergency_visits_count || 1}
+                  {ehr.asthma_history?.emergency_visits_count ?? 0}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Clinical Personal Best PEF:</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>
-                  {ehr.asthma_history?.clinical_personal_best_pef ? `${ehr.asthma_history.clinical_personal_best_pef} L/min` : '450 L/min (Documented)'}
+                  {ehr.asthma_history?.clinical_personal_best_pef ? `${ehr.asthma_history.clinical_personal_best_pef} L/min` : 'Not recorded'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Associated Atopic Conditions:</span>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>
-                  {ehr.asthma_history?.associated_conditions?.join(', ') || 'Allergic rhinitis'}
+                  {ehr.asthma_history?.associated_conditions?.length ? ehr.asthma_history.associated_conditions.join(', ') : 'None documented'}
                 </span>
               </div>
             </div>
@@ -123,15 +123,21 @@ export default function HistoricalEHRView({ patientId, ehrData, labsData, imagin
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Age / Gender:</span>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>28 Years • Female</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>
+                  {ehr.demographics?.age !== undefined ? `${ehr.demographics.age} Years` : 'Age N/A'} • {ehr.demographics?.gender ? (ehr.demographics.gender.charAt(0).toUpperCase() + ehr.demographics.gender.slice(1)) : 'Gender N/A'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Primary Clinic:</span>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>Pulmonary Outpatient Center, Bengaluru</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>
+                  {ehr.demographics?.city ? `Outpatient Center, ${ehr.demographics.city}` : 'Pulmonary Outpatient Center'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>EHR Source:</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>Synthea Synthetic FHIR Bundle</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>
+                  {ehr.provenance || 'Synthea Synthetic FHIR Bundle'}
+                </span>
               </div>
             </div>
           </div>

@@ -83,8 +83,11 @@ export default function App() {
       .catch((err) => console.error('Failed to load patients', err));
   }, []);
 
+  const activeReqIdRef = React.useRef(0);
+
   // Fetch Patient-specific state whenever selectedPatientId changes
   const fetchPatientData = async (pid) => {
+    const currentReqId = ++activeReqIdRef.current;
     try {
       const [profRes, predRes, labsRes, imgRes, ehrRes, trigRes, timeRes, monRes] = await Promise.all([
         fetch(`/api/patients/${pid}`),
@@ -97,41 +100,70 @@ export default function App() {
         fetch(`/api/patients/${pid}/monitoring?limit=30`)
       ]);
 
+      // If a newer request was dispatched while this was in-flight, discard results safely
+      if (activeReqIdRef.current !== currentReqId) {
+        return;
+      }
+
       if (profRes.ok) {
         const prof = await profRes.json();
         setPatientProfile(prof);
+        const cs = prof.current_state || {};
         setCurrentObservation({
-          peak_flow_pef_l_min: prof.current_state?.pef || 320,
-          fev1_l: prof.current_state?.fev1 || 2.1,
-          respiratory_rate_bpm: prof.current_state?.respiratory_rate || 22,
-          spo2_pct: prof.current_state?.spo2 || 96,
-          heart_rate_bpm: prof.current_state?.heart_rate || 98,
-          symptom_severity_0_3: Math.round((prof.current_state?.symptom_score || 6) / 2),
-          pm25_ug_m3: 82,
-          pm10_ug_m3: 120,
-          temperature_c: 32,
-          humidity_pct: 68,
-          pollen_level_0_10: 7.2,
-          dust_exposure_level: 1,
-          timestamp: prof.current_state?.observation_timestamp || new Date().toISOString()
+          peak_flow_pef_l_min: cs.pef ?? null,
+          fev1_l: cs.fev1 ?? null,
+          respiratory_rate_bpm: cs.respiratory_rate ?? null,
+          spo2_pct: cs.spo2 ?? null,
+          heart_rate_bpm: cs.heart_rate ?? null,
+          symptom_severity_0_3: cs.symptom_score !== undefined && cs.symptom_score !== null ? Math.round(cs.symptom_score / 2) : 0,
+          pm25_ug_m3: cs.pm25 ?? null,
+          pm10_ug_m3: cs.pm10 ?? null,
+          temperature_c: cs.temperature ?? null,
+          humidity_pct: cs.humidity ?? null,
+          pollen_level_0_10: cs.pollen ?? null,
+          dust_exposure_level: cs.dust ?? 0,
+          wheezing: cs.wheezing ?? 0,
+          coughing: cs.coughing ?? 0,
+          rescue_inhaler_uses: cs.rescue_inhaler_uses ?? 0,
+          timestamp: cs.observation_timestamp || new Date().toISOString()
         });
       }
 
       if (predRes.ok) {
         const pred = await predRes.json();
-        setPredictionData(pred);
+        if (activeReqIdRef.current === currentReqId) setPredictionData(pred);
       }
 
-      if (labsRes.ok) setLabsData(await labsRes.json());
-      if (imgRes.ok) setImagingData(await imgRes.json());
-      if (ehrRes.ok) setEhrData(await ehrRes.json());
-      if (trigRes.ok) setTriggerData(await trigRes.json());
-      if (timeRes.ok) setTimelineData(await timeRes.json());
-      if (monRes.ok) setMonitoringHistory(await monRes.json());
+      if (labsRes.ok) {
+        const labs = await labsRes.json();
+        if (activeReqIdRef.current === currentReqId) setLabsData(labs);
+      }
+      if (imgRes.ok) {
+        const img = await imgRes.json();
+        if (activeReqIdRef.current === currentReqId) setImagingData(img);
+      }
+      if (ehrRes.ok) {
+        const ehr = await ehrRes.json();
+        if (activeReqIdRef.current === currentReqId) setEhrData(ehr);
+      }
+      if (trigRes.ok) {
+        const trig = await trigRes.json();
+        if (activeReqIdRef.current === currentReqId) setTriggerData(trig);
+      }
+      if (timeRes.ok) {
+        const tline = await timeRes.json();
+        if (activeReqIdRef.current === currentReqId) setTimelineData(tline);
+      }
+      if (monRes.ok) {
+        const mon = await monRes.json();
+        if (activeReqIdRef.current === currentReqId) setMonitoringHistory(mon);
+      }
 
       // Also fetch prediction history
       const histRes = await fetch(`/api/patients/${pid}/prediction/history`);
-      if (histRes.ok) setPredictionHistory(await histRes.json());
+      if (histRes.ok && activeReqIdRef.current === currentReqId) {
+        setPredictionHistory(await histRes.json());
+      }
     } catch (e) {
       console.error('Error fetching patient data', e);
     }
@@ -596,6 +628,7 @@ export default function App() {
                 <AnatomicalLungViewer
                   patient={currentPatient}
                   currentObservation={currentObservation}
+                  monitoringHistory={monitoringHistory}
                   onSelectAnnotation={(pin) => setSelectedAnnotation(pin)}
                   selectedPin={selectedAnnotation}
                   onOpenViewer={() => setIsCTViewerOpen(true)}
@@ -622,6 +655,7 @@ export default function App() {
 
                 <EnvironmentalExposureCard
                   currentObservation={currentObservation}
+                  monitoringHistory={monitoringHistory}
                   city={currentPatient.city || 'Bengaluru, KA'}
                   onNavigateEnvironmental={() => setActiveNav('Environmental Analysis')}
                 />
@@ -645,6 +679,7 @@ export default function App() {
               patientId={selectedPatientId}
               currentObservation={currentObservation}
               monitoringHistory={monitoringHistory}
+              patientProfile={patientProfile}
               onStepSimulation={handleStepSimulation}
               onResetSimulation={handleResetSimulation}
               isPlaying={isPlaying}
@@ -742,7 +777,7 @@ export default function App() {
             <div style={{ padding: '16px 0', fontSize: 13, color: '#334155', lineHeight: 1.5 }}>
               <p>{selectedAnnotation.desc}</p>
               <div style={{ marginTop: 12, padding: 10, background: '#f8fafc', borderRadius: 6, fontSize: 11.5, color: 'var(--text-muted)' }}>
-                <strong>Dynamic Correlation:</strong> Current telemetry demonstrates real-time airway resistance index derived from baseline spirometry ratio.
+                <strong>Dynamic Correlation:</strong> Current telemetry demonstrates real-time pulmonary resistance index derived from baseline spirometry ratio.
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>

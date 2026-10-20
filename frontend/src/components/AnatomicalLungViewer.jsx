@@ -6,7 +6,6 @@ import {
   TrendingUp, 
   AlertCircle,
   Layers,
-  Wind,
   Play,
   Pause
 } from 'lucide-react';
@@ -17,10 +16,12 @@ export default function AnatomicalLungViewer({
   patient, 
   currentObservation, 
   onSelectAnnotation, 
+  _selectedPin, 
   onOpenViewer, 
-  imagingData 
+  imagingData,
+  monitoringHistory
 }) {
-  const [activeTab, setActiveTab] = useState('Lungs'); // 'Lungs', 'Airways', 'CT Scan', '3D View'
+  const [activeTab, setActiveTab] = useState('Lungs'); // 'Lungs', 'CT Scan', '3D View'
   const [hoveredPin, setHoveredPin] = useState(null);
   const [isBreathing2D, setIsBreathing2D] = useState(true);
 
@@ -33,6 +34,31 @@ export default function AnatomicalLungViewer({
   const pbPef = patient?.baseline?.personal_best_pef || 450;
   const pefRatio = Math.max(0.4, Math.min(1.0, pef / pbPef));
   const pefDropPct = Math.round((1.0 - pefRatio) * 100);
+
+  // Compute dynamic sparklines from recent observations
+  const recentObs = (monitoringHistory?.recent_observations || []).slice(-8);
+  const pefPoints = recentObs.map(o => Number(o.peak_flow_pef_l_min)).filter(v => !isNaN(v) && v > 0);
+  const fev1Points = recentObs.map(o => Number(o.fev1_l)).filter(v => !isNaN(v) && v > 0);
+
+  const buildSparkline = (dataPoints, defaultVal, minY = 100, maxY = 500) => {
+    const pts = dataPoints.length >= 2 ? dataPoints : [defaultVal * 1.05, defaultVal * 0.98, defaultVal];
+    const actualMin = Math.min(...pts, minY);
+    const actualMax = Math.max(...pts, maxY);
+    const range = actualMax - actualMin || 1;
+    const w = 110;
+    const h = 38;
+    const coords = pts.map((val, idx) => {
+      const x = (idx / (pts.length - 1)) * (w - 10) + 5;
+      const y = h - 6 - ((val - actualMin) / range) * (h - 12);
+      return { x, y };
+    });
+    const pathD = coords.reduce((acc, p, i) => i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `${acc} L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`, '');
+    const lastCoord = coords[coords.length - 1];
+    return { pathD, lastCoord };
+  };
+
+  const pefSpark = buildSparkline(pefPoints, pef, 150, 480);
+  const fev1Spark = buildSparkline(fev1Points, fev1, 1.0, 3.5);
 
   // Dynamic patient-specific pins
   const isWheezing = currentObservation?.wheezing === 1;
@@ -99,7 +125,7 @@ export default function AnatomicalLungViewer({
         </div>
 
         <div className="pill-tabs">
-          {['Lungs', 'Airways', 'CT Scan', '3D View'].map((tab) => (
+          {['Lungs', 'CT Scan', '3D View'].map((tab) => (
             <button
               key={tab}
               className={`pill-tab ${activeTab === tab ? 'active' : ''}`}
@@ -181,7 +207,7 @@ export default function AnatomicalLungViewer({
                 </div>
               </div>
 
-              {/* Viewport Canvas: 2D Model Mesh on Clinical Navy Cavity */}
+              {/* Viewport Canvas: 2D Model Mesh on Clinical Light Cavity */}
               <div style={{ 
                 flex: 1, 
                 position: 'relative', 
@@ -202,13 +228,13 @@ export default function AnatomicalLungViewer({
                     width: '100%', 
                     height: '100%', 
                     pointerEvents: 'none',
-                    opacity: 0.18
+                    opacity: 0.35
                   }}
                 >
-                  <circle cx="200" cy="200" r="170" fill="none" stroke="#0284c7" strokeWidth="0.75" strokeDasharray="3 6" opacity="0.45" />
-                  <circle cx="200" cy="200" r="120" fill="none" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="2 4" opacity="0.35" />
-                  <line x1="200" y1="20" x2="200" y2="380" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.3" />
-                  <line x1="30" y1="200" x2="370" y2="200" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.3" />
+                  <circle cx="200" cy="200" r="170" fill="none" stroke="#0284c7" strokeWidth="0.75" strokeDasharray="3 6" opacity="0.30" />
+                  <circle cx="200" cy="200" r="120" fill="none" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="2 4" opacity="0.22" />
+                  <line x1="200" y1="20" x2="200" y2="380" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.20" />
+                  <line x1="30" y1="200" x2="370" y2="200" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.20" />
                 </svg>
 
                 {/* Living 2D Stage: Expands organically with tidal breathing */}
@@ -236,26 +262,26 @@ export default function AnatomicalLungViewer({
                     {/* Trachea Leader Line (to Top-Left) */}
                     <circle cx="200" cy="96" r="3.5" fill="#0284c7" />
                     <circle cx="200" cy="96" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
-                    <line x1="200" y1="96" x2="145" y2="34" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="145" y1="34" x2="85" y2="34" stroke="#0284c7" strokeWidth="1.2" opacity="0.8" />
+                    <line x1="200" y1="96" x2="145" y2="34" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="145" y1="34" x2="85" y2="34" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
 
                     {/* Main Bronchi Leader Line (to Staggered Right) */}
                     <circle cx="200" cy="160" r="3.5" fill="#0284c7" />
                     <circle cx="200" cy="160" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
-                    <line x1="200" y1="160" x2="265" y2="98" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="265" y1="98" x2="315" y2="98" stroke="#0284c7" strokeWidth="1.2" opacity="0.8" />
+                    <line x1="200" y1="160" x2="265" y2="98" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="265" y1="98" x2="315" y2="98" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
 
                     {/* Right Lung Leader Line (to Staggered Mid-Left) */}
                     <circle cx="115" cy="225" r="3.5" fill="#0284c7" />
                     <circle cx="115" cy="225" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
-                    <line x1="115" y1="225" x2="70" y2="345" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="70" y1="345" x2="18" y2="345" stroke="#0284c7" strokeWidth="1.2" opacity="0.8" />
+                    <line x1="115" y1="225" x2="70" y2="345" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="70" y1="345" x2="18" y2="345" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
 
                     {/* Left Lung Leader Line (to Staggered Bottom-Right) */}
                     <circle cx="285" cy="228" r="3.5" fill={hasAirTrapping ? "#e11d48" : "#0284c7"} />
                     <circle cx="285" cy="228" r="7.5" fill="none" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
-                    <line x1="285" y1="228" x2="330" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="330" y1="382" x2="382" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" opacity="0.8" />
+                    <line x1="285" y1="228" x2="330" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="330" y1="382" x2="382" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" opacity="0.85" />
                   </svg>
 
                   {/* Staggered Non-Overlapping Corner Callout Badges */}
@@ -318,7 +344,7 @@ export default function AnatomicalLungViewer({
                     <div className={`pin-pill ${pins[3].alert ? 'alert' : ''}`}>
                       <span className={`pin-beacon-anchor ${pins[3].alert ? 'alert' : ''}`} />
                       <span>
-                        <strong style={{ color: pins[3].alert ? '#fca5a5' : '#38bdf8' }}>{pins[3].title}</strong> <span style={{ fontSize: 10, color: pins[3].alert ? '#fecdd3' : '#cbd5e1' }}>• {pins[3].subtitle}</span>
+                        <strong style={{ color: pins[3].alert ? '#f87171' : '#38bdf8' }}>{pins[3].title}</strong> <span style={{ fontSize: 10, color: pins[3].alert ? '#fecdd3' : '#cbd5e1' }}>• {pins[3].subtitle}</span>
                       </span>
                     </div>
                   </div>
@@ -352,7 +378,7 @@ export default function AnatomicalLungViewer({
               {/* Informative Footer */}
               <div style={{ 
                 fontSize: 9.5, 
-                color: '#94a3b8', 
+                color: '#64748b', 
                 borderTop: '1px solid var(--border-light)', 
                 padding: '6px 14px', 
                 background: 'rgba(255, 255, 255, 0.92)',
@@ -366,95 +392,16 @@ export default function AnatomicalLungViewer({
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: isBreathing2D ? '#0284c7' : '#94a3b8', boxShadow: isBreathing2D ? '0 0 6px #0284c7' : 'none' }} />
                   <span>2D Physiological Twin • {isBreathing2D ? 'Tidal Motion Active (22 bpm)' : 'Motion Paused'}</span>
                 </span>
-                <span style={{ color: '#64748b' }}>Click any structure for clinical telemetry • Switch to 3D View for 360° inspection</span>
+                <span style={{ color: '#94a3b8' }}>Click any structure for clinical telemetry • Switch to 3D View for 360° inspection</span>
               </div>
             </div>
           )}
 
-          {/* TAB 2: AIRWAYS VIEW (Distinct Bronchial Cross-Section & Caliber) */}
-          {activeTab === 'Airways' && (
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
-                  <Wind size={15} />
-                  <span>Bronchial Airway Lumen Dynamics</span>
-                </div>
-                <span className="status-pill normal" style={{ fontSize: 10 }}>Descriptive Simulation</span>
-              </div>
-
-              {/* Cross-section SVG */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg viewBox="0 0 240 220" width="220" height="200">
-                  <defs>
-                    <radialGradient id="airwayLumen" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#0284c7" stopOpacity="0.9" />
-                      <stop offset="90%" stopColor="#0369a1" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#0c4a6e" stopOpacity="1" />
-                    </radialGradient>
-                  </defs>
-
-                  {/* Outer Adventitia Layer */}
-                  <circle cx="120" cy="110" r="95" fill="#1e293b" stroke="#334155" strokeWidth="2" />
-                  
-                  {/* Smooth Muscle Ring */}
-                  <circle cx="120" cy="110" r="82" fill="none" stroke="#7f1d1d" strokeWidth="9" opacity="0.85" strokeDasharray="6 2" />
-
-                  {/* Mucosal Subepithelial Layer (Thickened if inflamed) */}
-                  <circle 
-                    cx="120" 
-                    cy="110" 
-                    r="72" 
-                    fill="#450a0a" 
-                    stroke={hasAirTrapping ? "#ef4444" : "#f59e0b"} 
-                    strokeWidth={hasAirTrapping ? "12" : "6"} 
-                    opacity="0.8" 
-                  />
-
-                  {/* Airway Lumen Opening (Scales dynamically with PEF ratio) */}
-                  <circle 
-                    cx="120" 
-                    cy="110" 
-                    r={Math.max(25, Math.round(55 * pefRatio))} 
-                    fill="url(#airwayLumen)" 
-                    stroke="#38bdf8" 
-                    strokeWidth="2" 
-                  />
-
-                  {/* Inner airway airflow ripple */}
-                  <circle cx="120" cy="110" r={Math.max(15, Math.round(35 * pefRatio))} fill="none" stroke="#7dd3fc" strokeWidth="1" strokeDasharray="3 3">
-                    <animateTransform attributeName="transform" type="rotate" from="0 120 110" to="360 120 110" dur="8s" repeatCount="indefinite" />
-                  </circle>
-
-                  {/* Labels */}
-                  <text x="120" y="114" fill="#ffffff" fontSize="11" fontWeight="bold" textAnchor="middle">
-                    {Math.round(pefRatio * 100)}% Lumen
-                  </text>
-                  <text x="120" y="195" fill="#94a3b8" fontSize="9.5" textAnchor="middle">
-                    Smooth Muscle &amp; Mucosa
-                  </text>
-                </svg>
-              </div>
-
-              {/* Airway status metrics & disclaimer */}
-              <div style={{ background: '#090d16', borderRadius: 8, padding: '10px 12px', border: '1px solid #1e293b' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 11, marginBottom: 6 }}>
-                  <div>Wheezing: <strong style={{ color: isWheezing ? '#f59e0b' : '#10b981' }}>{isWheezing ? 'Detected' : 'Absent'}</strong></div>
-                  <div>Cough: <strong style={{ color: currentObservation?.coughing ? '#f59e0b' : '#10b981' }}>{currentObservation?.coughing ? 'Present' : 'None'}</strong></div>
-                  <div>Inhaler Uses: <strong>{currentObservation?.rescue_inhaler_uses || 0} puff(s)</strong></div>
-                  <div>Est. Resistance: <strong>{(1.0 / pefRatio).toFixed(2)}x baseline</strong></div>
-                </div>
-                <div style={{ fontSize: 9.5, color: '#64748b', lineHeight: 1.3 }}>
-                  *Descriptive simulation: Airway caliber is modeled mathematically from PEF ratio ({pef}/{pbPef} L/min). Does not represent direct bronchoscopy.
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: CT SCAN VIEW (Patient-Specific or Informative Empty State) */}
+          {/* TAB 2: CT SCAN VIEW (Patient-Specific or Informative Empty State) */}
           {activeTab === 'CT Scan' && (
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontSize: 13, fontWeight: 700 }}>
                   <Scan size={15} />
                   <span>Thoracic Diagnostic Imaging Study</span>
                 </div>
@@ -510,7 +457,7 @@ export default function AnatomicalLungViewer({
             </div>
           )}
 
-          {/* TAB 4: 3D VIEW (Interactive Rotatable 3D Thoracic Model) */}
+          {/* TAB 3: 3D VIEW (Interactive Rotatable 3D Thoracic Model) */}
           {activeTab === '3D View' && (
             <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '480px', display: 'flex', flexDirection: 'column', background: 'var(--canvas-bg)' }}>
               <div style={{ 
@@ -522,12 +469,12 @@ export default function AnatomicalLungViewer({
                 background: 'rgba(11, 17, 32, 0.85)',
                 backdropFilter: 'blur(8px)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontSize: 13, fontWeight: 700 }}>
                   <Layers size={15} />
                   <span>3D Thoracic Anatomical Model</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="status-pill normal" style={{ fontSize: 10, background: '#eff6ff', color: '#0284c7', border: '1px solid #bfdbfe' }}>
+                  <span className="status-pill normal" style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
                     WebGL 3D Twin
                   </span>
                 </div>
@@ -545,9 +492,9 @@ export default function AnatomicalLungViewer({
               <div style={{ 
                 fontSize: 9.5, 
                 color: '#94a3b8', 
-                borderTop: '1px solid var(--border-light)', 
+                borderTop: '1px solid rgba(30, 41, 59, 0.8)', 
                 padding: '6px 14px', 
-                background: 'rgba(255, 255, 255, 0.92)', 
+                background: 'rgba(11, 17, 32, 0.85)', 
                 backdropFilter: 'blur(8px)',
                 lineHeight: 1.3 
               }}>
@@ -585,14 +532,18 @@ export default function AnatomicalLungViewer({
               {/* Sparkline PEF */}
               <div className="spiro-sparkline">
                 <svg viewBox="0 0 110 38" width="100%" height="100%">
-                  <path
-                    d="M 0 18 Q 20 8, 40 22 T 80 12 T 110 24"
-                    fill="none"
-                    stroke="#2563eb"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="110" cy="24" r="3.5" fill="#2563eb" />
+                  {pefSpark.pathD && (
+                    <path
+                      d={pefSpark.pathD}
+                      fill="none"
+                      stroke="#2563eb"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                  )}
+                  {pefSpark.lastCoord && (
+                    <circle cx={pefSpark.lastCoord.x} cy={pefSpark.lastCoord.y} r="3.5" fill="#2563eb" />
+                  )}
                 </svg>
               </div>
             </div>
@@ -613,14 +564,18 @@ export default function AnatomicalLungViewer({
               {/* Sparkline FEV1 */}
               <div className="spiro-sparkline">
                 <svg viewBox="0 0 110 38" width="100%" height="100%">
-                  <path
-                    d="M 0 14 Q 25 10, 50 24 T 85 16 T 110 26"
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="110" cy="26" r="3.5" fill="#3b82f6" />
+                  {fev1Spark.pathD && (
+                    <path
+                      d={fev1Spark.pathD}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                  )}
+                  {fev1Spark.lastCoord && (
+                    <circle cx={fev1Spark.lastCoord.x} cy={fev1Spark.lastCoord.y} r="3.5" fill="#3b82f6" />
+                  )}
                 </svg>
               </div>
             </div>
