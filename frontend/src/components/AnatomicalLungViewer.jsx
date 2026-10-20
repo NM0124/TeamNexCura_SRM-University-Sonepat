@@ -1,32 +1,29 @@
 import React, { useState } from 'react';
 import { 
   Activity, 
-  Heart, 
-  Clock, 
-  ShieldAlert, 
   Scan, 
   TrendingDown, 
   TrendingUp, 
   AlertCircle,
-  Info,
-  RotateCw,
-  RotateCcw,
-  Layers
+  Layers,
+  Play,
+  Pause
 } from 'lucide-react';
+import Lung3DCanvas from './Lung3DCanvas';
+import lung2DModelImg from '../assets/lung_2d_transparent.png';
 
 export default function AnatomicalLungViewer({ 
   patient, 
   currentObservation, 
   onSelectAnnotation, 
-  selectedPin, 
+  _selectedPin, 
   onOpenViewer, 
   imagingData,
   monitoringHistory
 }) {
   const [activeTab, setActiveTab] = useState('Lungs'); // 'Lungs', 'CT Scan', '3D View'
-  const [activeTool, setActiveTool] = useState('lungs');
   const [hoveredPin, setHoveredPin] = useState(null);
-  const [yaw, setYaw] = useState(0); // 3D rotation angle in degrees
+  const [isBreathing2D, setIsBreathing2D] = useState(true);
 
   const pef = currentObservation?.peak_flow_pef_l_min || 320;
   const fev1 = currentObservation?.fev1_l || 2.1;
@@ -73,7 +70,7 @@ export default function AnatomicalLungViewer({
       title: 'Trachea',
       subtitle: isWheezing ? 'Mucosal Irritation [Simulated]' : 'Normal Patency',
       x: '50%',
-      y: '32%',
+      y: '22%',
       status: isWheezing ? 'warning' : 'normal',
       dotColor: isWheezing ? '#f59e0b' : '#22c55e',
       alert: isWheezing,
@@ -82,11 +79,22 @@ export default function AnatomicalLungViewer({
         : 'Normal central airway caliber without detected mucosal inflammation.'
     },
     {
+      id: 'bronchi',
+      title: 'Main Bronchi',
+      subtitle: 'Symmetrical Bifurcation',
+      x: '50%',
+      y: '36%',
+      status: 'normal',
+      dotColor: '#22c55e',
+      alert: false,
+      detail: 'Symmetrical primary bronchi caliber entering the pulmonary hilum.'
+    },
+    {
       id: 'right_lung',
       title: 'Right Lung',
       subtitle: 'Normal Aeration',
-      x: '34%',
-      y: '58%',
+      x: '27%',
+      y: '56%',
       status: 'normal',
       dotColor: '#22c55e',
       alert: false,
@@ -96,8 +104,8 @@ export default function AnatomicalLungViewer({
       id: 'left_lung',
       title: 'Left Lung',
       subtitle: hasAirTrapping ? 'Air Trapping [Simulated]' : 'Adequate Ventilation',
-      x: '66%',
-      y: '62%',
+      x: '73%',
+      y: '58%',
       status: hasAirTrapping ? 'alert' : 'normal',
       dotColor: hasAirTrapping ? '#ef4444' : '#22c55e',
       alert: hasAirTrapping,
@@ -133,125 +141,259 @@ export default function AnatomicalLungViewer({
       <div className="virtual-patient-split">
         {/* Anatomical Viewer Canvas */}
         <div className="anatomical-viewer-container">
-          {/* TAB 1: LUNGS VIEW */}
+          {/* TAB 1: LUNGS VIEW (Living 2D Anatomical Digital Twin Model) */}
           {activeTab === 'Lungs' && (
-            <div className="lung-svg-box">
-              <svg viewBox="0 0 400 450" width="100%" height="100%" style={{ filter: 'drop-shadow(0 0 25px rgba(56, 189, 248, 0.25))' }}>
-                <defs>
-                  <radialGradient id="lungBgGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#0284c7" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#0b1120" stopOpacity="0" />
-                  </radialGradient>
-
-                  <linearGradient id="tracheaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#38bdf8" />
-                    <stop offset="70%" stopColor="#0284c7" />
-                    <stop offset="100%" stopColor={isWheezing ? "#f59e0b" : "#38bdf8"} />
-                  </linearGradient>
-
-                  <linearGradient id="rightLungGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.85" />
-                    <stop offset="50%" stopColor="#0284c7" stopOpacity="0.65" />
-                    <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0.3" />
-                  </linearGradient>
-
-                  <linearGradient id="leftLungGrad" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor={hasAirTrapping ? "#fb7185" : "#38bdf8"} stopOpacity="0.85" />
-                    <stop offset="40%" stopColor={hasAirTrapping ? "#e11d48" : "#0284c7"} stopOpacity="0.6" />
-                    <stop offset="100%" stopColor={hasAirTrapping ? "#881337" : "#1e3a8a"} stopOpacity="0.3" />
-                  </linearGradient>
-
-                  <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {/* Background ambient pulmonary glow */}
-                <circle cx="200" cy="240" r="150" fill="url(#lungBgGlow)" />
-
-                {/* Thoracic Ribcage Silhouettes */}
-                <g stroke="#1e293b" strokeWidth="1.5" fill="none" opacity="0.45">
-                  <path d="M 130 140 C 90 150, 70 180, 70 210" />
-                  <path d="M 270 140 C 310 150, 330 180, 330 210" />
-                  <path d="M 125 180 C 80 195, 60 230, 60 270" />
-                  <path d="M 275 180 C 320 195, 340 230, 340 270" />
-                  <path d="M 120 220 C 75 240, 55 280, 55 330" />
-                  <path d="M 280 220 C 325 240, 345 280, 345 330" />
-                </g>
-
-                {/* Right Lung (Viewer's left) */}
-                <path
-                  d="M 185 155 C 170 135, 140 130, 115 150 C 80 180, 65 240, 70 300 C 75 350, 110 390, 150 395 C 175 398, 185 360, 185 320 Z"
-                  fill="url(#rightLungGrad)"
-                  stroke="#38bdf8"
-                  strokeWidth="1.5"
-                  filter="url(#neonGlow)"
-                  style={{ cursor: 'pointer', transition: 'all 0.3s' }}
-                  onClick={() => onSelectAnnotation && onSelectAnnotation(pins[1])}
-                />
-
-                {/* Left Lung (Viewer's right - Air Trapping Highlight if PEF dropped) */}
-                <path
-                  d="M 215 155 C 230 135, 260 130, 285 150 C 320 180, 335 240, 330 300 C 325 350, 290 390, 250 395 C 225 398, 215 360, 215 320 Z"
-                  fill="url(#leftLungGrad)"
-                  stroke={hasAirTrapping ? "#fb7185" : "#38bdf8"}
-                  strokeWidth="1.5"
-                  filter="url(#neonGlow)"
-                  style={{ cursor: 'pointer', transition: 'all 0.3s' }}
-                  onClick={() => onSelectAnnotation && onSelectAnnotation(pins[2])}
-                />
-
-                {/* Trachea (Central Airway) */}
-                <path
-                  d="M 194 60 L 206 60 L 206 170 L 194 170 Z"
-                  fill="url(#tracheaGrad)"
-                  stroke="#38bdf8"
-                  strokeWidth="1.2"
-                />
-
-                {/* Tracheal rings */}
-                {[75, 90, 105, 120, 135, 150, 165].map((yVal, idx) => (
-                  <line key={idx} x1="193" y1={yVal} x2="207" y2={yVal} stroke="#0284c7" strokeWidth="1.5" opacity="0.8" />
-                ))}
-
-                {/* Main Bronchi */}
-                <path d="M 200 170 Q 170 190 140 220" stroke="#38bdf8" strokeWidth="4" fill="none" strokeLinecap="round" />
-                <path d="M 200 170 Q 230 190 260 220" stroke={hasAirTrapping ? "#f43f5e" : "#38bdf8"} strokeWidth="4" fill="none" strokeLinecap="round" />
-
-                {/* Secondary branches */}
-                <path d="M 155 205 Q 120 220 100 250" stroke="#0284c7" strokeWidth="2.5" fill="none" />
-                <path d="M 140 220 Q 130 260 120 310" stroke="#0284c7" strokeWidth="2" fill="none" />
-                <path d="M 245 205 Q 280 220 300 250" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="2.5" fill="none" />
-                <path d="M 260 220 Q 270 260 280 310" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="2" fill="none" />
-
-                {/* Dynamic Airflow particles */}
-                <circle cx="200" cy="110" r="2.5" fill="#ffffff" opacity="0.9">
-                  <animate attributeName="cy" values="70;170;70" dur="2.4s" repeatCount="indefinite" />
-                </circle>
-              </svg>
-
-              {/* Clickable Callout Pins */}
-              {pins.map((pin) => (
-                <div
-                  key={pin.id}
-                  className="annotation-pin"
-                  style={{ top: pin.y, left: pin.x, transform: 'translate(-50%, -50%)' }}
-                  onClick={() => onSelectAnnotation && onSelectAnnotation(pin)}
-                  onMouseEnter={() => setHoveredPin(pin)}
-                  onMouseLeave={() => setHoveredPin(null)}
-                >
-                  <div className={`pin-pill ${pin.alert ? 'alert' : ''}`}>
-                    <span className={`pin-dot ${pin.alert ? 'red' : ''}`} />
-                    <span>
-                      <strong>{pin.title}:</strong> {pin.subtitle}
-                    </span>
-                  </div>
+            <div className="lung-2d-viewport">
+              {/* Header Bar for 2D Model view */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                borderBottom: '1px solid var(--border-light)',
+                background: 'rgba(255, 255, 255, 0.92)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 10
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7', fontSize: 13, fontWeight: 700 }}>
+                  <Activity size={15} />
+                  <span>2D Thoracic Anatomical Model</span>
                 </div>
-              ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="status-pill normal" style={{ fontSize: 10, background: '#eff6ff', color: '#0284c7', border: '1px solid #bfdbfe' }}>
+                    Physiological 2D Twin
+                  </span>
+
+                  {/* Breathing Pulse Toggle Button */}
+                  <button 
+                    onClick={() => setIsBreathing2D(!isBreathing2D)}
+                    className={`canvas-tool-btn ${isBreathing2D ? 'active' : ''}`}
+                    style={{
+                      height: 26,
+                      padding: '0 8px',
+                      width: 'auto',
+                      fontSize: 10.5,
+                      gap: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: 6
+                    }}
+                    title={isBreathing2D ? 'Pause Breathing Motion' : 'Resume Breathing Motion'}
+                  >
+                    {isBreathing2D ? <Pause size={11} /> : <Play size={11} />}
+                    <span>Breathing</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setActiveTab('3D View')}
+                    style={{
+                      background: '#2563eb',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      boxShadow: '0 1px 3px rgba(37, 99, 235, 0.3)'
+                    }}
+                  >
+                    <span>Inspect 3D Twin</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Viewport Canvas: 2D Model Mesh on Clinical Light Cavity */}
+              <div style={{ 
+                flex: 1, 
+                position: 'relative', 
+                width: '100%', 
+                height: '100%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                background: 'transparent',
+                overflow: 'hidden'
+              }}>
+                {/* Thoracic Calibration Grid & Medical Reticle Background */}
+                <svg 
+                  viewBox="0 0 400 400" 
+                  style={{ 
+                    position: 'absolute', 
+                    inset: 0, 
+                    width: '100%', 
+                    height: '100%', 
+                    pointerEvents: 'none',
+                    opacity: 0.35
+                  }}
+                >
+                  <circle cx="200" cy="200" r="170" fill="none" stroke="#0284c7" strokeWidth="0.75" strokeDasharray="3 6" opacity="0.30" />
+                  <circle cx="200" cy="200" r="120" fill="none" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="2 4" opacity="0.22" />
+                  <line x1="200" y1="20" x2="200" y2="380" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.20" />
+                  <line x1="30" y1="200" x2="370" y2="200" stroke="#0284c7" strokeWidth="0.5" strokeDasharray="4 8" opacity="0.20" />
+                </svg>
+
+                {/* Living 2D Stage: Expands organically with tidal breathing */}
+                <div 
+                  className={`lung-2d-stage ${isBreathing2D ? 'breathing' : ''}`}
+                >
+                  <img 
+                    src={lung2DModelImg} 
+                    alt="2D Human Respiratory Model" 
+                    className="lung-2d-model-img" 
+                  />
+
+                  {/* SVG Leader Lines & Glowing Organ Anchor Points */}
+                  <svg 
+                    viewBox="0 0 400 420" 
+                    style={{ 
+                      position: 'absolute', 
+                      inset: 0, 
+                      width: '100%', 
+                      height: '100%', 
+                      pointerEvents: 'none',
+                      zIndex: 7
+                    }}
+                  >
+                    {/* Trachea Leader Line (to Top-Left) */}
+                    <circle cx="200" cy="96" r="3.5" fill="#0284c7" />
+                    <circle cx="200" cy="96" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
+                    <line x1="200" y1="96" x2="145" y2="34" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="145" y1="34" x2="85" y2="34" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
+
+                    {/* Main Bronchi Leader Line (to Staggered Right) */}
+                    <circle cx="200" cy="160" r="3.5" fill="#0284c7" />
+                    <circle cx="200" cy="160" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
+                    <line x1="200" y1="160" x2="265" y2="98" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="265" y1="98" x2="315" y2="98" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
+
+                    {/* Right Lung Leader Line (to Staggered Mid-Left) */}
+                    <circle cx="115" cy="225" r="3.5" fill="#0284c7" />
+                    <circle cx="115" cy="225" r="7.5" fill="none" stroke="#0284c7" strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
+                    <line x1="115" y1="225" x2="70" y2="345" stroke="#0284c7" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="70" y1="345" x2="18" y2="345" stroke="#0284c7" strokeWidth="1.2" opacity="0.85" />
+
+                    {/* Left Lung Leader Line (to Staggered Bottom-Right) */}
+                    <circle cx="285" cy="228" r="3.5" fill={hasAirTrapping ? "#e11d48" : "#0284c7"} />
+                    <circle cx="285" cy="228" r="7.5" fill="none" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1" strokeDasharray="2 2" opacity="0.85" />
+                    <line x1="285" y1="228" x2="330" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" strokeDasharray="3 3" opacity="0.85" />
+                    <line x1="330" y1="382" x2="382" y2="382" stroke={hasAirTrapping ? "#e11d48" : "#0284c7"} strokeWidth="1.2" opacity="0.85" />
+                  </svg>
+
+                  {/* Staggered Non-Overlapping Corner Callout Badges */}
+                  {/* Trachea Badge: Top-Left */}
+                  <div
+                    className="annotation-pin"
+                    style={{ position: 'absolute', top: 20, left: 14, zIndex: 10, cursor: 'pointer' }}
+                    onClick={() => onSelectAnnotation && onSelectAnnotation(pins[0])}
+                    onMouseEnter={() => setHoveredPin(pins[0])}
+                    onMouseLeave={() => setHoveredPin(null)}
+                  >
+                    <div className={`pin-pill ${pins[0].alert ? 'alert' : ''}`}>
+                      <span className={`pin-beacon-anchor ${pins[0].alert ? 'alert' : ''}`} />
+                      <span>
+                        <strong style={{ color: '#38bdf8' }}>{pins[0].title}</strong> <span style={{ fontSize: 10, color: '#cbd5e1' }}>• {pins[0].subtitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Main Bronchi Badge: Staggered Top-Right */}
+                  <div
+                    className="annotation-pin"
+                    style={{ position: 'absolute', top: 86, right: 14, zIndex: 10, cursor: 'pointer' }}
+                    onClick={() => onSelectAnnotation && onSelectAnnotation(pins[1])}
+                    onMouseEnter={() => setHoveredPin(pins[1])}
+                    onMouseLeave={() => setHoveredPin(null)}
+                  >
+                    <div className={`pin-pill ${pins[1].alert ? 'alert' : ''}`}>
+                      <span className={`pin-beacon-anchor ${pins[1].alert ? 'alert' : ''}`} />
+                      <span>
+                        <strong style={{ color: '#38bdf8' }}>{pins[1].title}</strong> <span style={{ fontSize: 10, color: '#cbd5e1' }}>• {pins[1].subtitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Lung Badge: Staggered Mid/Lower-Left (No collision) */}
+                  <div
+                    className="annotation-pin"
+                    style={{ position: 'absolute', bottom: 52, left: 14, zIndex: 10, cursor: 'pointer' }}
+                    onClick={() => onSelectAnnotation && onSelectAnnotation(pins[2])}
+                    onMouseEnter={() => setHoveredPin(pins[2])}
+                    onMouseLeave={() => setHoveredPin(null)}
+                  >
+                    <div className={`pin-pill ${pins[2].alert ? 'alert' : ''}`}>
+                      <span className={`pin-beacon-anchor ${pins[2].alert ? 'alert' : ''}`} />
+                      <span>
+                        <strong style={{ color: '#38bdf8' }}>{pins[2].title}</strong> <span style={{ fontSize: 10, color: '#cbd5e1' }}>• {pins[2].subtitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Left Lung Badge: Staggered Bottom-Right (Clear of Right Lung) */}
+                  <div
+                    className="annotation-pin"
+                    style={{ position: 'absolute', bottom: 14, right: 14, zIndex: 10, cursor: 'pointer' }}
+                    onClick={() => onSelectAnnotation && onSelectAnnotation(pins[3])}
+                    onMouseEnter={() => setHoveredPin(pins[3])}
+                    onMouseLeave={() => setHoveredPin(null)}
+                  >
+                    <div className={`pin-pill ${pins[3].alert ? 'alert' : ''}`}>
+                      <span className={`pin-beacon-anchor ${pins[3].alert ? 'alert' : ''}`} />
+                      <span>
+                        <strong style={{ color: pins[3].alert ? '#f87171' : '#38bdf8' }}>{pins[3].title}</strong> <span style={{ fontSize: 10, color: pins[3].alert ? '#fecdd3' : '#cbd5e1' }}>• {pins[3].subtitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Active Hover Detail Tooltip */}
+                  {hoveredPin && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 46,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'rgba(3, 8, 22, 0.95)',
+                      backdropFilter: 'blur(10px)',
+                      border: `1px solid ${hoveredPin.alert ? '#ff2255' : '#00f0ff'}`,
+                      borderRadius: 8,
+                      padding: '7px 16px',
+                      fontSize: 11,
+                      color: '#e2e8f0',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 240, 255, 0.25)',
+                      zIndex: 20,
+                      pointerEvents: 'none',
+                      textAlign: 'center',
+                      maxWidth: '85%'
+                    }}>
+                      <strong style={{ color: hoveredPin.alert ? '#ff3b5c' : '#00f0ff' }}>{hoveredPin.title}:</strong> {hoveredPin.detail}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Informative Footer */}
+              <div style={{ 
+                fontSize: 9.5, 
+                color: '#64748b', 
+                borderTop: '1px solid var(--border-light)', 
+                padding: '6px 14px', 
+                background: 'rgba(255, 255, 255, 0.92)',
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                lineHeight: 1.3 
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: isBreathing2D ? '#0284c7' : '#94a3b8', boxShadow: isBreathing2D ? '0 0 6px #0284c7' : 'none' }} />
+                  <span>2D Physiological Twin • {isBreathing2D ? 'Tidal Motion Active (22 bpm)' : 'Motion Paused'}</span>
+                </span>
+                <span style={{ color: '#94a3b8' }}>Click any structure for clinical telemetry • Switch to 3D View for 360° inspection</span>
+              </div>
             </div>
           )}
 
@@ -317,87 +459,46 @@ export default function AnatomicalLungViewer({
 
           {/* TAB 3: 3D VIEW (Interactive Rotatable 3D Thoracic Model) */}
           {activeTab === '3D View' && (
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 8 }}>
+            <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '480px', display: 'flex', flexDirection: 'column', background: 'var(--canvas-bg)' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                borderBottom: '1px solid rgba(30, 41, 59, 0.8)', 
+                padding: '10px 16px',
+                background: 'rgba(11, 17, 32, 0.85)',
+                backdropFilter: 'blur(8px)'
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontSize: 13, fontWeight: 700 }}>
                   <Layers size={15} />
                   <span>3D Thoracic Anatomical Model</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <button 
-                    style={{ background: '#1e293b', border: 'none', color: '#e2e8f0', padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                    onClick={() => setYaw((y) => (y - 30 + 360) % 360)}
-                    title="Rotate left"
-                  >
-                    ◀ Rotate Left
-                  </button>
-                  <button 
-                    style={{ background: '#1e293b', border: 'none', color: '#e2e8f0', padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                    onClick={() => setYaw((y) => (y + 30) % 360)}
-                    title="Rotate right"
-                  >
-                    Rotate Right ▶
-                  </button>
-                  <button 
-                    style={{ background: '#334155', border: 'none', color: '#e2e8f0', padding: '2px 6px', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}
-                    onClick={() => setYaw(0)}
-                    title="Reset angle"
-                  >
-                    Reset
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="status-pill normal" style={{ fontSize: 10, background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                    WebGL 3D Twin
+                  </span>
                 </div>
               </div>
 
-              {/* 3D Model Perspective projection based on yaw */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg viewBox="0 0 240 220" width="220" height="200" style={{ filter: 'drop-shadow(0 0 20px rgba(56, 189, 248, 0.2))' }}>
-                  <defs>
-                    <radialGradient id="meshGrad" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#0284c7" stopOpacity="0.7" />
-                      <stop offset="100%" stopColor="#082f49" stopOpacity="0.2" />
-                    </radialGradient>
-                  </defs>
-
-                  {/* Rotatable Coordinate Container */}
-                  <g transform={`rotate(${Math.sin((yaw * Math.PI) / 180) * 18}, 120, 110)`}>
-                    {/* Spine posterior reference */}
-                    <rect x="117" y="30" width="6" height="150" rx="3" fill="#334155" opacity="0.6" />
-
-                    {/* Left & Right Rib Cage Layering computed with isometric projection */}
-                    {[-40, -20, 0, 20, 40, 60].map((offsetY, idx) => {
-                      const spread = 70 + Math.cos(((yaw + idx * 15) * Math.PI) / 180) * 15;
-                      const depth = Math.sin(((yaw + idx * 15) * Math.PI) / 180) * 10;
-                      return (
-                        <g key={idx} opacity={0.5 + idx * 0.08}>
-                          <path 
-                            d={`M ${120 - spread} ${100 + offsetY} C ${120 - spread * 0.5} ${85 + offsetY + depth}, ${120 + spread * 0.5} ${85 + offsetY - depth}, ${120 + spread} ${100 + offsetY}`} 
-                            stroke="#38bdf8" 
-                            strokeWidth="1.5" 
-                            fill="none" 
-                          />
-                        </g>
-                      );
-                    })}
-
-                    {/* Central Trachea */}
-                    <path d="M 120 40 L 120 100" stroke="#7dd3fc" strokeWidth="4" strokeLinecap="round" />
-                    <path d="M 120 100 Q 95 115 80 140" stroke="#38bdf8" strokeWidth="2.5" fill="none" />
-                    <path d="M 120 100 Q 145 115 160 140" stroke="#38bdf8" strokeWidth="2.5" fill="none" />
-
-                    {/* Lobar volumetric clouds */}
-                    <ellipse cx={95 - Math.sin((yaw * Math.PI) / 180) * 15} cy="135" rx="38" ry="48" fill="url(#meshGrad)" stroke="#38bdf8" strokeWidth="1" opacity="0.75" />
-                    <ellipse cx={145 - Math.sin((yaw * Math.PI) / 180) * 15} cy="135" rx="38" ry="48" fill="url(#meshGrad)" stroke="#38bdf8" strokeWidth="1" opacity="0.75" />
-                  </g>
-
-                  {/* Orientation Indicator */}
-                  <text x="120" y="210" fill="#94a3b8" fontSize="10" textAnchor="middle">
-                    Viewing Angle: {yaw}° Yaw (Thoracic Cavity)
-                  </text>
-                </svg>
+              {/* Genuine 3D WebGL Canvas */}
+              <div style={{ flex: 1, position: 'relative', minHeight: '420px' }}>
+                <Lung3DCanvas 
+                  patient={patient} 
+                  currentObservation={currentObservation} 
+                  onSelectAnnotation={onSelectAnnotation} 
+                />
               </div>
 
-              <div style={{ fontSize: 9.5, color: '#64748b', borderTop: '1px solid #1e293b', paddingTop: 6, lineHeight: 1.3 }}>
-                *Standard Anatomical Reference Model (Adult Thoracic Cavity). Generic 3D geometry for spatial anatomical orientation; not derived from patient-specific volumetric CT segmentation.
+              <div style={{ 
+                fontSize: 9.5, 
+                color: '#94a3b8', 
+                borderTop: '1px solid rgba(30, 41, 59, 0.8)', 
+                padding: '6px 14px', 
+                background: 'rgba(11, 17, 32, 0.85)', 
+                backdropFilter: 'blur(8px)',
+                lineHeight: 1.3 
+              }}>
+                *Standard Anatomical Reference Model (Adult Thoracic Cavity). Genuine 3D geometry with dynamic telemetry response; click any label or organ for clinical insights.
               </div>
             </div>
           )}
