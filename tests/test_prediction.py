@@ -15,7 +15,7 @@ def test_label_builder_forward_window():
     """Verifies label at row i depends strictly on subsequent observations (i < j <= i + H)."""
     # 10 hourly points
     timestamps = [f"2026-10-01 0{i}:00:00" for i in range(10)]
-    pef = [400, 400, 400, 300, 290, 400, 400, 400, 400, 400]# Drops at t=3 and t=4
+    pef = [400, 400, 400, 300, 290, 400, 400, 400, 400, 400]  # Drops at t=3 and t=4
     df = pd.DataFrame({
         "timestamp": timestamps,
         "peak_flow_pef_l_min": pef,
