@@ -1,4 +1,4 @@
-# 🫁 Environment-Aware Asthma Digital Twin Platform
+# 🫁 Asthra — Asthma Digital Twin Platform
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/frontend-React-61dafb.svg)](https://react.dev/)
@@ -8,6 +8,28 @@
 [![Status](https://img.shields.io/badge/PoC-Synthetic%20Research-informational.svg)]()
 
 > **RESEARCH & SOFTWARE PROOF OF CONCEPT:** This system is an evidence-grounded research software prototype developed with synthetic time-series and synthetic EHR data. It does **not** provide medical diagnosis, does not prescribe treatments, and is not a cleared medical device.
+
+---
+
+## 👥 Team & Institution Information
+
+| Field | Details |
+|---|---|
+| **Team Name** | Team NexCura |
+| **Project Title** | Asthra — Asthma Digital Twin Platform |
+| **College / Institution** | SRM University Delhi-NCR, Sonepat, Haryana, India |
+| **Incubation Centre** | CIIE (Center of Innovation, Incubation and Entrepreneurship) |
+| **Department / Specialization** | Computer Science and Engineering (CSE) — Data Science and Artificial Intelligence |
+| **Academic Year** | Third Year |
+
+### Team Members
+
+| Role | Name |
+|---|---|
+| 👑 Team Leader | Nikhil Mehlawat |
+| Member | Janis Malhotra |
+| Member | Krithika Meenakshi |
+| Member | Sakshi Kaushik |
 
 ---
 
@@ -28,6 +50,22 @@ Existing remote patient monitoring systems present disconnected sensor graphs wi
 * Predictive early warning (forecasting deterioration hours before severe symptoms).
 * Environmental attribution (identifying which ambient exposures provoked the decline).
 * Safe algorithmic abstention (preventing confident predictions on corrupted or stale sensor data).
+
+---
+
+## 2b. 🩺 Healthcare Use Case
+
+Asthra explores a patient-specific asthma-monitoring workflow for respiratory clinicians and researchers. It combines synthetic historical Electronic Health Records (EHRs) with simulated respiratory measurements, symptom observations, and environmental time-series data to demonstrate how a patient's evolving virtual state could be monitored.
+
+The prototype explores the following use cases:
+
+* **Personalized respiratory monitoring:** Review changes in respiratory measurements relative to a patient's available baseline.
+* **Deterioration risk estimation:** Estimate the risk of a defined future decline in Peak Expiratory Flow (PEF).
+* **Environmental trigger analysis:** Examine temporal associations between environmental exposures and subsequent respiratory changes.
+* **What-if scenario simulation:** Explore hypothetical changes using an isolated copy of a virtual patient's state.
+* **Clinical decision-support research:** Present patient history, measurements, trends, and model estimates through a clinician-oriented dashboard.
+
+> **Disclaimer:** Asthra is a synthetic-data research prototype, not a clinically validated medical device. Its outputs must not be used for diagnosis, treatment decisions, medication adjustments, or emergency triage.
 
 ---
 
@@ -161,6 +199,29 @@ asthma2.0-digital-twin/
 
 ---
 
+## 6b. 🤖 AI/ML Models and Frameworks
+
+* **Machine Learning Framework:** scikit-learn
+  * **Logistic Regression:** Used for the historical EHR-only comparison baseline.
+  * **HistGradientBoostingClassifier:** Used for dynamic time-series and fused-data model comparisons, as documented in the project evaluation.
+* **Data Preprocessing:** `StandardScaler` and scikit-learn `Pipeline`.
+* **Feature Engineering:** Time-aware features, rolling baseline statistics, and environmental lag features based on observations available at the prediction cut-off.
+* **Model Evaluation:** F1 score, Precision-Recall Area Under the Curve (PR-AUC), and Brier score.
+* **Rule-Based Baseline:** A rule-based approach for comparison with machine-learning models.
+
+The project documentation reports the following results from synthetic data:
+
+| Model Approach | F1 Score | PR-AUC | Brier Score |
+|---|---|---|---|
+| Historical EHR only | 0.000 | 0.028 | 0.0251 |
+| Dynamic time-series only | 0.870 | 0.785 | 0.0045 |
+| Fused EHR and dynamic data | 0.870 | 0.798 | 0.0045 |
+| Rule-based baseline | 0.853 | N/A | N/A |
+
+> These are reported prototype evaluation results on synthetic data. They do not establish clinical validity or real-world predictive performance.
+
+---
+
 ## 7. Installation & Setup
 
 ### Prerequisites
@@ -263,7 +324,37 @@ All 20 unit and integration tests validate:
 
 ---
 
-## 13. License
+## 13. 📑 Submission Deliverables & Documentation Links
 
-Distributed under the MIT License. See `LICENSE` for details.
-Synthea™ is open-source software under the Apache 2.0 license.
+### Project Repository
+
+* **GitHub Repository:** [https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat](https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat)
+
+### Project Resources
+
+| Resource | Link |
+|---|---|
+| 🎬 YouTube Demonstration Video | [Add YouTube video link] |
+| 📊 Project Presentation (PPTX) | [Add presentation deck link] |
+| 📄 Presentation PDF | [Add presentation PDF link] |
+| 🏗️ System Architecture Diagram (PDF) | [Add architecture diagram link or repository path] |
+| 🏗️ System Architecture Presentation (PPTX) | [Add architecture presentation link] |
+| 📁 Supporting Documents (Google Drive) | [Add Google Drive folder link] |
+
+> **Note:** Replace the placeholders with the final shareable links before submission.
+
+---
+
+## 14. 📄 Open-Source License Details
+
+The project's original code is distributed under the **MIT License**. See the [`LICENSE`](LICENSE) file in the repository for the complete license text and copyright attribution.
+
+| Field | Details |
+|---|---|
+| **Project License** | MIT License |
+| **License File** | [`LICENSE`](LICENSE) |
+| **Copyright Year** | 2026 |
+| **Copyright Holder** | Confirm the agreed rights holder before publishing — for example, the individual repository owner or Team NexCura if the team has agreed to that attribution. |
+| **Synthea** | Distributed under the Apache License 2.0. |
+
+> **Important:** The project's MIT License does not automatically replace the licenses of third-party dependencies, datasets, or other assets. Review the applicable license and attribution requirements for each third-party component and dataset.
