@@ -1,4 +1,4 @@
-# 🫁 Asthra — Asthma Digital Twin Platform
+# Asthra — Asthma Digital Twin Platform
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/frontend-React-61dafb.svg)](https://react.dev/)
@@ -11,7 +11,7 @@
 
 ---
 
-## 👥 Team & Institution Information
+## Team & Institution Information
 
 | Field | Details |
 |---|---|
@@ -26,7 +26,7 @@
 
 | Role | Name |
 |---|---|
-| 👑 Team Leader | Nikhil Mehlawat |
+| Team Leader | Nikhil Mehlawat |
 | Member | Janis Malhotra |
 | Member | Krithika Meenakshi |
 | Member | Sakshi Kaushik |
@@ -35,7 +35,7 @@
 
 ## 1. Project Overview
 
-The **Environment-Aware Asthma Digital Twin Platform** creates a dynamic virtual representation of an asthma patient by fusing static electronic health record (EHR) medical histories with continuous physiological measurements (PEF, SpO₂, heart rate, respiratory rate), patient-reported symptoms, and localized environmental exposures (PM2.5, PM10, pollen, temperature, humidity).
+The **Athra - Asthma Digital Twin Platform** creates a dynamic virtual representation of an asthma patient by fusing static electronic health record (EHR) medical histories with continuous physiological measurements (PEF, SpO₂, heart rate, respiratory rate), patient-reported symptoms, and localized environmental exposures (PM2.5, PM10, pollen, temperature, humidity).
 
 The platform continuously maintains a patient-specific personalized baseline, assesses incoming data quality, forecasts 6-hour deterioration risks, explains active environmental trigger fingerprints, and provides an interactive "what-if" scenario simulation lab for clinicians.
 
@@ -71,7 +71,7 @@ The prototype explores the following use cases:
 
 ## 3. Proposed Solution
 
-The Environment-Aware Asthma Digital Twin addresses these shortcomings through:
+This platform addresses these shortcomings through:
 1. **Longitudinal EHR Fusion:** Integrates Synthea FHIR records to ground the digital twin in the patient's verified diagnosis date, hospitalization history, active controller medications, and known allergies.
 2. **Stepped Time-Series Replay Engine:** Replays hourly wearable and ambient environmental observations without leaking future observations.
 3. **Personalized Robust Baseline:** Automatically computes rolling medians and MAD statistics, clearly flagging provisional baselines (< 24h) and maintaining clinician-documented clinical personal bests.
@@ -97,7 +97,7 @@ In this platform, each patient's twin is encapsulated as an independent `Patient
 ## 5. Architecture
 
 ```
-asthma2.0-digital-twin/
+TeamNexCura_SRM-University-Sonepat/
 │
 ├── server.py                          # FastAPI backend & static React bundle server
 ├── frontend/                          # React doctor dashboard application
@@ -184,6 +184,9 @@ asthma2.0-digital-twin/
     ├── LIMITATIONS.md                 # Clinical governance & scientific limitations
     ├── SIMULATION_METHOD.md           # Diurnal cycle & episode generation math
     └── API_AND_EXTENSION_GUIDE.md     # Extension guide for external feeds & databases
+    └── submission/
+        ├── Presentation.pptx
+        ├── Architecture_Diagram.png
 ```
 
 ---
@@ -231,8 +234,8 @@ The project documentation reports the following results from synthetic data:
 
 ### Step 1: Clone the repository
 ```bash
-git clone https://github.com/NM0124/asthma2.0-digital-twin.git
-cd asthma2.0-digital-twin
+git clone https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat.git
+cd TeamNexCura_SRM-University-Sonepat
 ```
 
 ### Step 2: Install Python dependencies
@@ -334,14 +337,10 @@ All 20 unit and integration tests validate:
 
 | Resource | Link |
 |---|---|
-| 🎬 YouTube Demonstration Video | [Add YouTube video link] |
-| 📊 Project Presentation (PPTX) | [Add presentation deck link] |
-| 📄 Presentation PDF | [Add presentation PDF link] |
-| 🏗️ System Architecture Diagram (PDF) | [Add architecture diagram link or repository path] |
-| 🏗️ System Architecture Presentation (PPTX) | [Add architecture presentation link] |
-| 📁 Supporting Documents (Google Drive) | [Add Google Drive folder link] |
-
-> **Note:** Replace the placeholders with the final shareable links before submission.
+| YouTube Demonstration Video | [Watch](https://youtu.be/wn8XU9k5enw?si=Rl9Dejd_8RctbuM0) |
+| Project Presentation (PPTX) | [View](https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat/blob/main/docs/submission/Presentation.pptx) |
+| System Architecture Diagram (PDF) | [View](https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat/blob/main/docs/submission/Architecture_Diagram.pdf) |
+| Documents (Google Drive) | [Open](https://drive.google.com/drive/folders/1wAE_r-JBrkR5AqjI_3NMf3ODpQsigVbT?usp=sharing) |
 
 ---
 
@@ -354,7 +353,6 @@ The project's original code is distributed under the **MIT License**. See the [`
 | **Project License** | MIT License |
 | **License File** | [`LICENSE`](LICENSE) |
 | **Copyright Year** | 2026 |
-| **Copyright Holder** | Confirm the agreed rights holder before publishing — for example, the individual repository owner or Team NexCura if the team has agreed to that attribution. |
 | **Synthea** | Distributed under the Apache License 2.0. |
 
 > **Important:** The project's MIT License does not automatically replace the licenses of third-party dependencies, datasets, or other assets. Review the applicable license and attribution requirements for each third-party component and dataset.
