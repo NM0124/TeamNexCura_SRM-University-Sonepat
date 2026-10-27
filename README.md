@@ -332,7 +332,7 @@ All 20 unit and integration tests validate:
 ### Project Repository
 
 * **GitHub Repository:** [https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat](https://github.com/NM0124/TeamNexCura_SRM-University-Sonepat)
-* **Prototype Demo** [View](https://teamnexcura-srm-university-sonepat.onrender.com)
+* **Prototype Demo** [https://teamnexcura-srm-university-sonepat.onrender.com](https://teamnexcura-srm-university-sonepat.onrender.com)
 
 ### Project Resources
 
